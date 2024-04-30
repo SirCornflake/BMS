@@ -13,3 +13,7 @@ The following files are as follows:
 4. "ens.csv": A "csv" file that contains the data set used in the "Application Code.R" file
 
 5. “ens_description.pdf”: Data dictionary for the "ens" data-set
+
+6. "Simulation Study Without Bayes Factor.R": A R script that replicates the simulation study WITHOUT the Bayes factor computation
+
+7. "Simulation Study With Bayes Factor.R": A R script that replicates the simulation study WITH the Bayes factor computation
