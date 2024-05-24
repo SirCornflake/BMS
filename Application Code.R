@@ -192,10 +192,9 @@ fit_Pad<-list()
 for(i in 1:length(r_alpha))
 {
 	cat("  Quantile", r_alpha[i], "\r")
-	fit_Pad[[i]]<-gibbs_QR(y, Covariates, first_excluded=0, nchain=nchain, burnin=burnin, alpha=r_alpha[i], tau2=1000, rho=1, a0=1, b0=1,
-	beta.ini=rep(1,length(Covariates[1,]) +1), invsigma2.ini=1, w.ini=rep(1,length(y)), count.iteration=FALSE )
+	fit_Pad[[i]]<-gibbs_abms(y, Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, r_alpha[i],
+			  a0=1, b0=1, count.iteration=FALSE )
 }
-
 
 ##################################################
 ## 		Fitting BMS for pas base		##
@@ -209,8 +208,8 @@ fit_Pas<-list()
 for(i in 1:length(r_alpha))
 {
 	cat("  Quantile", r_alpha[i], "\r")
-	fit_Pas[[i]]<-gibbs_QR(y, Covariates, first_excluded=0, nchain=nchain, burnin=burnin, alpha=r_alpha[i], tau2=1000, rho=1, a0=1, b0=1,
-	beta.ini=rep(1,length(Covariates[1,]) +1), invsigma2.ini=1, w.ini=rep(1,length(y)), count.iteration=FALSE )
+	fit_Pas[[i]]<-gibbs_abms(y, Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, r_alpha[i],
+			  a0=1, b0=1, count.iteration=FALSE )
 }
 
 
