@@ -18,6 +18,6 @@ These files contain the necessary functions to perform a Bayesian model selectio
 
 6. "Simulation Study With Beta-Binom.R": A R script that performs a simulation study where we also compute our Bayesian model selection method with the Beta-Binomial prior
 
-7. "Simulation Study With Beta-Binom.R": A R script that replicates the simulation study where we only consider the Womack prior for our Bayesian model selection method
+7. "Simulation Study Without Beta-Binom.R": A R script that replicates the simulation study where we only consider the Womack prior for our Bayesian model selection method
 
 8. "Comparing BF between models.R": A R script that computes the Bayes factor between the true model and two nested models for the Linear, Logistic, Negative-Binomial, Quantile, and Skew-Normal regression models
