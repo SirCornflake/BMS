@@ -112,11 +112,6 @@ for(i in 1:length(N_vec))
 }
 
 
-#setwd("C:/Users/asus/Dropbox/BMS, Bayesian Analysis Journal/R/For R package")
-setwd("C:/Users/Alumno/Dropbox/BMS, Bayesian Analysis Journal/R/For R package")
-load("BF_evolution_AllRegression.Rdata")
-
-
 
 ############################################
 ## 			gg plot 			##
