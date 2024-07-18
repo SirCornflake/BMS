@@ -1,11 +1,5 @@
-#rm(list=ls(all=TRUE))
-#setwd("C:/Users/Alumno/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/R")
-#setwd("C:/Users/asus/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/R")
-
-#setwd("C:/Users/Alumno/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/Refeeres notes/R code/Simulation study Results")
-#setwd("C:/Users/asus/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/Refeeres notes/R code/Simulation study Results")
-#setwd("C:/Users/Andrea/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/Refeeres notes/R code/Simulation study Results")
-#source("functions.R")
+rm(list=ls(all=TRUE))
+source("functions.R")
 
 #install.packages("BiocManager")
 #BiocManager::install("sparseMatrixStats")
