@@ -1086,8 +1086,6 @@ nchain<-10000; burnin<-2000	#chain large and burn-in
 tau2<-1000; rho<-1	#tau and rho value
 
 
-#setwd("C:/Users/asus/Dropbox/BMS, Bayesian Analysis Journal/R/For R package")
-#save.image("Normal_Size200_p6.Rdata")
 ############################################
 ## 		LiR Regression			##
 ############################################
