@@ -113,7 +113,7 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	
 	## Obtaining Explored Model Table from output
 	ExploredMOurMethod<-data.frame(aux$Model_Exploration_OurMethod)
-	ExploredMLA<-data.frame(aux$Model_Exploration_LA)	#DE AH� CAMBIAR ESTO, PUES YA FUE ARREGLADO EN EL CODIGO
+	ExploredMLA<-data.frame(aux$Model_Exploration_LA)	
 	ExploredMStepAIC<-data.frame(aux$Model_Exploration_StepAIC)
 	ExploredMStepBIC<-data.frame(aux$Model_Exploration_StepBIC)
 
@@ -233,10 +233,10 @@ General_Sim_OurMethod<-function(N, r_beta, R, nchain=1000, burnin=0, Regression=
 t0<-proc.time()
 	first_excluded=0
 	p<-length(r_beta)
-	intercept_first_excluded<- first_excluded +1	#Aqu� estoy excluyendo el intercepto del proceso de selecci�n
-	p_selection<-p -intercept_first_excluded		#n�mero de coeficientes a testear
-	DataList<-list()					#Lista que en cada entrada guarda "base" de cada r�plica, esto es, matriz con respuesta y covariables
-	RealModel<-+(r_beta!=0)[-1]	#Real model. Erasing intercept, because it's out of the selection process
+	intercept_first_excluded<- first_excluded +1	
+	p_selection<-p -intercept_first_excluded		
+	DataList<-list()					
+	RealModel<-+(r_beta!=0)[-1]	
 	PredictorsIndex1_Real<-which(RealModel==1)	#Which beta!=0
 	PredictorsNames<-colnames(data.frame(matrix(ncol=p-1)))	#Predictor's names. In "X1,X2,..." format
 
@@ -245,8 +245,8 @@ t0<-proc.time()
 	SelectedModelsCountsOurMethod_rbind<-rbind( c(RealModel,0) )	#Counting selected models in replicas
 	colnames(SelectedModelsCountsOurMethod_rbind)<-c(PredictorsNames, "Frequency")
 	IndexSelectedModelsOurMethod_list<-NULL
-	CoefsMeanOurMethod_matrix<-matrix(0,ncol=p, nrow=R) #Matriz de la media a posteriori de beta en cada R�plica 
-	CoefsSDOurMethod_matrix<-matrix(0,ncol=p, nrow=R) #Matriz de la sd a posteriori de beta en cada R�plica 
+	CoefsMeanOurMethod_matrix<-matrix(0,ncol=p, nrow=R) 
+	CoefsSDOurMethod_matrix<-matrix(0,ncol=p, nrow=R) 
 	if(Regression=="Normal"){sigma2_mean_vector<-vector(length=R); sigma2_sd_vector<-vector(length=R) }
 	if(Regression=="NegBinomial"){r_mean_vector<-vector(length=R); r_sd_vector<-vector(length=R) }
 	if(Regression=="Quantile"){sigma2_mean_vector<-vector(length=R); sigma2_sd_vector<-vector(length=R) }
@@ -287,7 +287,6 @@ t0<-proc.time()
 	y<-vector(length=N)
 	for(k in 1:R)
 	{
-		#cat("  Replica", k, " ;", " Iteracion cadena", i, "de", nchain, "\r")
 		cat("  Replica", k, "\r")
 
 		## Pre-simulation stuff
