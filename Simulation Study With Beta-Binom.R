@@ -36,7 +36,7 @@ MyStepCriteria<-function(Regression, PredictorsNames, base, Criteria="AIC", ... 
 				aux_formula[[i]]<-paste0("y ~ ", paste0(Candidates_PredictorsNames[[i]], collapse = "+"))	}
 		}
 		p<-p-1
-		if(p==1){aux_formula<-paste0("y ~ 1")}	#Si p=1 => s�lo tenemos intercepto
+		if(p==1){aux_formula<-paste0("y ~ 1")}
 		
 		if(Regression=="Normal"){ aux_mods<- lapply(aux_formula, function(frml) glm(frml, data = base, family="gaussian")) }
 		if(Regression=="Binomial"){ aux_mods<- lapply(aux_formula, function(frml) glm(frml, data = base, family = "binomial", weights = ni)) }
