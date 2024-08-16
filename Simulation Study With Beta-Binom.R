@@ -872,7 +872,7 @@ t0<-proc.time()
 			glmStepBICSdMatrix[k,]<-aux_SdGlmStepBIC			
 		}
 
-		
+		## Uncomment this if you want to save the simulated data
 		#text_save<-paste0(Regression,"_","Size",N,"_","p",r_p,"",".Rdata")
 		#save.image(file=text_save)
 	
