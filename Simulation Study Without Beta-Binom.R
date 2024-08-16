@@ -37,6 +37,72 @@ mms_apply<-function(matrix, statistic, ...)
 }
 
 
+## Step Criteria manual (only backward)
+MyStepCriteria<-function(Regression, PredictorsNames, base, Criteria="AIC", ... )
+{
+	Criteria_lm<-function(fit, N, p, Criteria)
+	{	
+		if(Criteria=="AIC"){ result<-2*p -2*logLik(fit)[1] }	
+		if(Criteria=="BIC"){ result<-p*log(N) -2*logLik(fit)[1] }
+		return(result)
+	}
+
+	N<-nrow(base)
+	r_p<-ncol(base)
+	p<-r_p -1
+	aux_PredictorsNames<-PredictorsNames
+	flag<-0; j<-1
+	flag_intercept<-0
+	SelectedCriteria<-c()
+
+	if(Regression=="Normal"){ p_aux<-p+2; full_mods<- glm(y~., data = base, family="gaussian") }
+	if(Regression=="Binomial"){ full_mods<- glm(y~., data = base, family = "binomial", weights = ni) }
+	if(Regression=="NegBinomial"){ p_aux<-p+2; full_mods<- glm.nb(y~., data=base, init.theta=0.5) }
+	if(Regression=="Quantile"){ full_mods<- rq(y~., tau=r_alpha, data=base) }
+	if(Regression=="SkewNormal"){ p_aux<-p+3; full_mods<- selm(y~., data = base, family="SN") }
+	Criteria_FullModel<-Criteria_lm(full_mods, N, p=p_aux, Criteria)
+
+	while(flag==0)
+	{	
+		lengthPredictors<-length(aux_PredictorsNames)
+		aux_formula<-list(); Candidates_PredictorsNames<-list()
+		for(i in 1:lengthPredictors)
+		{
+			Candidates_PredictorsNames[[i]]<-aux_PredictorsNames[-(lengthPredictors +1 -i)]
+			if(Regression=="Binomial"){aux_formula[[i]]<-paste0("y/ni ~ ", paste0(Candidates_PredictorsNames[[i]], collapse = "+"))	}else{
+				aux_formula[[i]]<-paste0("y ~ ", paste0(Candidates_PredictorsNames[[i]], collapse = "+"))	}
+		}
+		p<-p-1
+		if(p==0){aux_formula<-paste0("y ~ 1"); Candidates_PredictorsNames<-"Intercept"}
+		
+		if(Regression=="Normal"){ p_aux<-p+2; aux_mods<- lapply(aux_formula, function(frml) glm(frml, data = base, family="gaussian")) }
+		if(Regression=="Binomial"){ aux_mods<- lapply(aux_formula, function(frml) glm(frml, data = base, family = "binomial", weights = ni)) }
+		if(Regression=="NegBinomial"){ p_aux<-p+2; aux_mods<- lapply(aux_formula, function(frml) glm.nb(frml, data=base, init.theta=0.5) ) }
+		if(Regression=="Quantile"){ aux_mods<- lapply(aux_formula, function(frml) rq(frml, tau=r_alpha, data=base)) }
+		if(Regression=="SkewNormal"){ p_aux<-p+3; aux_mods<- lapply(aux_formula, function(frml) selm(frml, data = base, family="SN")) }
+		aux_Criteria<-unlist(lapply(aux_mods, Criteria_lm, N=N, p=p_aux, Criteria=Criteria))
+		
+		aux_index<-which(min(aux_Criteria)==aux_Criteria)
+	
+		if(j>=2)
+		{
+			if(SelectedCriteria[j-1]<aux_Criteria[aux_index]){flag<-1; SelectedPredictors<-aux_PredictorsNames}else{
+			SelectedCriteria[j]<-aux_Criteria[aux_index]; j<-j+1; old_aux_mods<-aux_mods; old_aux_index<-aux_index
+			aux_PredictorsNames<-Candidates_PredictorsNames[[aux_index]] }
+		}else{
+			SelectedCriteria[j]<-aux_Criteria[aux_index]; j<-j+1
+			aux_PredictorsNames<-Candidates_PredictorsNames[[aux_index]]
+			old_aux_mods<-aux_mods; old_aux_index<-aux_index
+			if(Criteria_FullModel<SelectedCriteria){ flag<-1; SelectedPredictors<-PredictorsNames; old_aux_index<-1; old_aux_mods<-full_mods  }
+		}
+		if(p==0 && flag==0 && Candidates_PredictorsNames=="Intercept"){flag<-1; flag_intercept<-1}	
+	}
+	if(p==0 && flag==1){ SelectedPredictors<-"X1" }
+	if(flag_intercept==0){ SelectedFormula<-paste0("y ~ ", paste0(SelectedPredictors, collapse = "+"))	 }else{
+	SelectedFormula<-aux_formula }		
+	list(SelectedFormula=SelectedFormula, fit=old_aux_mods[[old_aux_index]])
+}
+
 Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 {
 	##########################
