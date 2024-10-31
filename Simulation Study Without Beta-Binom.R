@@ -464,24 +464,24 @@ t0<-proc.time()
 
 		
 		######################################
-		## 	 	 Rusell LA 		##
+		## 	 	 Rusell LA 			##
 		######################################
 		t0_LA<-proc.time()
 		if( Regression=="Normal" || Regression=="Binomial" || Regression=="Quantile" )
 		{
 
 		prCoef <- momprior(tau=1)  
-		prDelta <- modelbbprior(1,1)  
+		prDelta <- modelbbprior(1,1)   
 
 		## Fitting the model
 		if(Regression=="Quantile")
 		{
 			priorSkew<- 2*r_alpha -1	#Fixing quantile
 			fit_LA <- modelSelection(y=y_LA, x=X_LA, family=familyReg, priorCoef=prCoef, priorDelta=prDelta, priorSkew=priorSkew, method="Laplace",
-			verbose==FALSE, center=FALSE, scale=FALSE, niter=nchain, burnin=burnin, includevars=1)
+			verbose=FALSE, center=FALSE, scale=FALSE, niter=nchain, burnin=burnin, includevars=1)
 		}else{	
 			fit_LA <- modelSelection(y=y_LA, x=X_LA, family=familyReg, priorCoef=prCoef, priorDelta=prDelta, method="Laplace",
-			verbose==FALSE, center=FALSE, scale=FALSE, niter=nchain, burnin=burnin, includevars=1)
+			verbose=FALSE, center=FALSE, scale=FALSE, niter=nchain, burnin=burnin, includevars=1)
 		}
 		t1_LA<-proc.time()
 		time_LA<-time_LA +(t1_LA-t0_LA)[3]
@@ -492,10 +492,14 @@ t0<-proc.time()
 
 		if(Regression=="Normal" )
 		{
-			Sigma2MeanLA_vector[k]<-as.vector(coef(fit_LA)[p+1,1])
+			Sigma2MeanLA_vector[k]<-as.vector(coef(fit_LA)[p+2,1])
 		}
 
-		SelectedModelLA<-as.vector(fit_LA$postMode)[-1]		
+		## Explored Models
+		#IndexSelectedLA<-as.vector(which(fit_LA$postMode==1))
+		#SelectedModelLA<-rep(0, p-1)
+		#SelectedModelLA[IndexSelectedLA]<-1
+		SelectedModelLA<-as.vector(fit_LA$postMode)[-1]		#Excluding intercept
 		flag<-0; j<-1
 		while(flag==0)
 		{
@@ -513,8 +517,12 @@ t0<-proc.time()
 			}
 		}
 
+		#SelectedModelsCountsLA_rbind
+		#IndexSelectedModelsLA_list
 
 		}
+
+
 
 
 
