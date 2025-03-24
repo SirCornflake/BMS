@@ -1,12 +1,18 @@
 rm(list=ls(all=TRUE))
+#setwd("C:/Users/Alumno/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/R")
+#setwd("C:/Users/asus/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/R")
+
+#setwd("C:/Users/Alumno/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/Refeeres notes/R code/Simulation study Results")
+setwd("C:/Users/asus/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/Refeeres notes/R code/Simulation study Results")
+#setwd("C:/Users/Andrea/Dropbox/Bayesian model selection for some useful regression models 2 (1).0/Bayesian model selection for some useful regression models/Bayesian Analysis/Refeeres notes/R code/Simulation study Results")
 source("functions.R")
 
 #install.packages("BiocManager")
 #BiocManager::install("sparseMatrixStats")
 
 library(mombf)		#Rosell, LA method
-library(MASS)		#glm.nb (Negative binomial regression), stepAIC()
-library(quantreg)		#For Quantile regression
+library(MASS)		#glm.nb, regresion binomial negativa, steAIC()
+library(quantreg)		#Base de datos reales para quantile regression? Y para hacer frequentist quantile regression
 library(sn)		#Frequentist Regression Skew Normal
 library(xtable)
 ############################################################################################################
@@ -14,27 +20,6 @@ library(xtable)
 ##################################################################################################
 ##						 Functions, Just run this						##
 ##################################################################################################
-
-mcr <- function(x, drop = FALSE)
-  {
-    xx <- do.call("paste", c(data.frame(x), sep = "\r"))
-    tx <- table(xx)
-    mx <- base::names(tx)[which(tx == base::max(tx))[1]]
-    x[match(mx, xx), , drop = drop]
-  }
-
-Criteria_lm<-function(fit, N, p, Criteria)
-{	
-	if(Criteria=="AIC"){ result<-2*p -2*logLik(fit)[1] }	
-	if(Criteria=="BIC"){ result<-p*log(N) -2*logLik(fit)[1] }
-	return(result)
-}
-#Criteria_lm(fit, N, r_p, Criteria="AIC")
-
-mms_apply<-function(matrix, statistic, ...)
-{
-	if( length(dim(matrix))==0 ){matrix}else{apply(matrix, 2, statistic) }
-}
 
 
 ## Step Criteria manual (only backward)
@@ -103,6 +88,52 @@ MyStepCriteria<-function(Regression, PredictorsNames, base, Criteria="AIC", ... 
 	list(SelectedFormula=SelectedFormula, fit=old_aux_mods[[old_aux_index]])
 }
 
+mcr <- function(x, drop = FALSE)
+  {
+    xx <- do.call("paste", c(data.frame(x), sep = "\r"))
+    tx <- table(xx)
+    mx <- base::names(tx)[which(tx == base::max(tx))[1]]
+    x[match(mx, xx), , drop = drop]
+  }
+
+Criteria_lm<-function(fit, N, p, Criteria)
+{	
+	if(Criteria=="AIC"){ result<-2*p -2*logLik(fit)[1] }	
+	if(Criteria=="BIC"){ result<-p*log(N) -2*logLik(fit)[1] }
+	return(result)
+}
+#Criteria_lm(fit, N, r_p, Criteria="AIC")
+
+mms_apply<-function(matrix, statistic, ...)
+{
+	if( length(dim(matrix))==0 ){matrix}else{apply(matrix, 2, statistic) }
+}
+
+
+gen_base_NegBinomial_reg<- function(N, beta, r, Covariates)
+	{
+		X<-as.matrix(Covariates)
+		X<-cbind(rep(1,N),X)
+		colnames(X)<-NULL
+	
+		beta_matrix<-as.matrix(beta)
+		prob<- 1/(1 + exp(X%*%beta_matrix))
+	  
+		y<-vector(length=N)
+	
+		for(i in 1:N)
+		{
+			y[i]<-rnbinom(1, size=r, prob= prob[i])
+		}
+	
+		base <- data.frame(y = y,
+	                   Covariates = Covariates)  
+		colnames(base)[-1]<-colnames(Covariates)
+		return(base)
+	}
+
+
+
 Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 {
 	##########################
@@ -113,7 +144,7 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	
 	## Obtaining Explored Model Table from output
 	ExploredMOurMethod<-data.frame(aux$Model_Exploration_OurMethod)
-	ExploredMLA<-data.frame(aux$Model_Exploration_LA)	
+	ExploredMLA<-data.frame(aux$Model_Exploration_LA)	#DE AH� CAMBIAR ESTO, PUES YA FUE ARREGLADO EN EL CODIGO
 	ExploredMStepAIC<-data.frame(aux$Model_Exploration_StepAIC)
 	ExploredMStepBIC<-data.frame(aux$Model_Exploration_StepBIC)
 
@@ -233,10 +264,10 @@ General_Sim_OurMethod<-function(N, r_beta, R, nchain=1000, burnin=0, Regression=
 t0<-proc.time()
 	first_excluded=0
 	p<-length(r_beta)
-	intercept_first_excluded<- first_excluded +1	
-	p_selection<-p -intercept_first_excluded		
-	DataList<-list()					
-	RealModel<-+(r_beta!=0)[-1]	
+	intercept_first_excluded<- first_excluded +1	#Aqu� estoy excluyendo el intercepto del proceso de selecci�n
+	p_selection<-p -intercept_first_excluded		#n�mero de coeficientes a testear
+	DataList<-list()					#Lista que en cada entrada guarda "base" de cada r�plica, esto es, matriz con respuesta y covariables
+	RealModel<-+(r_beta!=0)[-1]	#Real model. Erasing intercept, because it's out of the selection process
 	PredictorsIndex1_Real<-which(RealModel==1)	#Which beta!=0
 	PredictorsNames<-colnames(data.frame(matrix(ncol=p-1)))	#Predictor's names. In "X1,X2,..." format
 
@@ -245,8 +276,8 @@ t0<-proc.time()
 	SelectedModelsCountsOurMethod_rbind<-rbind( c(RealModel,0) )	#Counting selected models in replicas
 	colnames(SelectedModelsCountsOurMethod_rbind)<-c(PredictorsNames, "Frequency")
 	IndexSelectedModelsOurMethod_list<-NULL
-	CoefsMeanOurMethod_matrix<-matrix(0,ncol=p, nrow=R) 
-	CoefsSDOurMethod_matrix<-matrix(0,ncol=p, nrow=R) 
+	CoefsMeanOurMethod_matrix<-matrix(0,ncol=p, nrow=R) #Matriz de la media a posteriori de beta en cada R�plica 
+	CoefsSDOurMethod_matrix<-matrix(0,ncol=p, nrow=R) #Matriz de la sd a posteriori de beta en cada R�plica 
 	if(Regression=="Normal"){sigma2_mean_vector<-vector(length=R); sigma2_sd_vector<-vector(length=R) }
 	if(Regression=="NegBinomial"){r_mean_vector<-vector(length=R); r_sd_vector<-vector(length=R) }
 	if(Regression=="Quantile"){sigma2_mean_vector<-vector(length=R); sigma2_sd_vector<-vector(length=R) }
@@ -257,15 +288,16 @@ t0<-proc.time()
 	SelectedModelsCountsLA_rbind<-rbind( c(RealModel,0) )	#Counting selected models in replicas
 	colnames(SelectedModelsCountsLA_rbind)<-c(PredictorsNames, "Frequency")
 	IndexSelectedModelsLA_list<-NULL
-	CoefsMeanLA_matrix<-matrix(0,ncol=p, nrow=R) 
-
+	CoefsMeanLA_matrix<-matrix(0,ncol=p, nrow=R) #Matriz de la media a posteriori de beta en cada R�plica 
+	#CoefsSdLA_matrix<-matrix(0,ncol=p, nrow=R) #Matriz de la sd a posteriori de beta en cada R�plica 
 	if(Regression=="Normal"){Sigma2MeanLA_vector<-vector(length=R) }
+	#if(Regression=="Normal"){Sigma2MeanLA_vector<-vector(length=R); Sigma2SdLA_vector<-vector(length=R) }
 	time_LA<-0
 	
 	## Preparation for StepAIC method
-	glmStepAICCoefsMatrix<-matrix(0,ncol=p, nrow=R)  
-	glmStepAICSdMatrix<-matrix(0,ncol=p, nrow=R)  
-	SelectedModelsCountsStepAIC_rbind<-rbind( c(RealModel,0) )
+	glmStepAICCoefsMatrix<-matrix(0,ncol=p, nrow=R)   #Matriz de los coeficientes de cada iter bajo glmStepAIC
+	glmStepAICSdMatrix<-matrix(0,ncol=p, nrow=R)   #Matriz de la SD de los coeficientes de cada iter bajo glmStepAIC
+	SelectedModelsCountsStepAIC_rbind<-rbind( c(RealModel,0) )	#Counting selected models in replicas
 	colnames(SelectedModelsCountsStepAIC_rbind)<-c(PredictorsNames, "Frequency")
 	IndexSelectedModelsStepAIC_list<-NULL
 	if(Regression=="Normal"){glmStepAIC_sigma2EstVector<-vector(length=R); glmStepAIC_sigma2SdVector<-vector(length=R)}
@@ -274,26 +306,42 @@ t0<-proc.time()
 	time_StepAIC<-0
 
 	## Preparation for StepBIC method
-	glmStepBICCoefsMatrix<-matrix(0,ncol=p, nrow=R)  
-	glmStepBICSdMatrix<-matrix(0,ncol=p, nrow=R)  
-	SelectedModelsCountsStepBIC_rbind<-rbind( c(RealModel,0) )	
+	glmStepBICCoefsMatrix<-matrix(0,ncol=p, nrow=R)   #Matriz de los coeficientes de cada iter bajo glmStepBIC
+	glmStepBICSdMatrix<-matrix(0,ncol=p, nrow=R)   #Matriz de la SD de los coeficientes de cada iter bajo glmStepBIC
+	SelectedModelsCountsStepBIC_rbind<-rbind( c(RealModel,0) )	#Counting selected models in replicas
 	colnames(SelectedModelsCountsStepBIC_rbind)<-c(PredictorsNames, "Frequency")
 	IndexSelectedModelsStepBIC_list<-NULL
 	if(Regression=="Normal"){glmStepBIC_sigma2EstVector<-vector(length=R); glmStepBIC_sigma2SdVector<-vector(length=R)}
 	if(Regression=="NegBinomial"){glmStepBIC_rEstVector<-vector(length=R); glmStepBIC_rSdVector<-vector(length=R)}
 	if(Regression=="SkewNormal"){glmStepBIC_lambdaEstVector<-vector(length=R); glmStepBIC_lambdaSdVector<-vector(length=R); glmStepBIC_sigma2EstVector<-vector(length=R); glmStepBIC_sigma2SdVector<-vector(length=R)}
 	time_StepBIC<-0
-	
+
+
+
+	#if(first_excluded!=0){PredictorsNamesCombinations<-PredictorsNames[-c(1:first_excluded)]}		#Sacar del proceso de selecci�n las primeras covariables que se indiquen (first_excluded)
+
+
+	#RealModelStepBic<-PredictorsNames[which(RealModel==1)]
+	#if(Regression=="Binomial")
+	#{
+	#	TrueModelFormula<-paste0("y/ni ~ ", paste0(PredictorsNames[PredictorsIndex1_Real], collapse = "+"))
+	#}else{TrueModelFormula<-paste0("y ~ ", paste0(PredictorsNames[PredictorsIndex1_Real], collapse = "+"))}
+
+	#aux_MatchStepBic<-1:length(PredictorsIndex1_Real)
 	y<-vector(length=N)
 	for(k in 1:R)
 	{
+		#cat("  Replica", k, " ;", " Iteracion cadena", i, "de", nchain, "\r")
 		cat("  Replica", k, "\r")
 
-		## Pre-simulation stuff
-		aux_cov<-rnorm((p-1)*N, 0, 1)			
+		## Preparando argumentos para la simulacion
+		aux_cov<-rnorm((p-1)*N, 0, 1)				
+		#aux_cov<-runif((p-1)*N, 0,1)
+
 
 		if(Regression=="Normal")
 		{
+			#X<-matrix( c(rep(1, N), aux_cov), ncol=p )
 			X<-matrix( c(rep(1, N), rnorm((p -1)*N)), ncol=p )
 			Xbeta<-X%*%r_beta
 			y<-rnorm(N, mean=Xbeta, sd=sqrt(r_sigma2))
@@ -323,15 +371,20 @@ t0<-proc.time()
 
 		if(Regression=="NegBinomial")
 		{
+			#covariables<-data.frame(matrix(aux_cov, ncol=p-1, nrow=N))		
+			#base<-gen_base_NegBinomial_reg(N, r_beta, r_r, covariables)
+			#y<-base$y
+
 			Check<-FALSE
-			while(Check==FALSE)	
+			while(Check==FALSE)		#"Arreglando" el problema de glm.nb
 			{
 				covariables<-data.frame(matrix(aux_cov, ncol=p-1, nrow=N))		
 				base<-gen_base_NegBinomial_reg(N, r_beta, r_r, covariables)
 				y<-base$y
 			
+				## Adelantando pega del "fit them all glm" por tema del problema del glm.nb
 				t0_StepAIC<-proc.time()
-				fit_AIC <- try(MyStepCriteria(Regression, PredictorsNames, base, Criteria="AIC"))
+				fit_AIC <- try(MyStepCriteria(Regression, PredictorsNames, base, Criteria="AIC"))	#Todos los ajustes segun de todas las combinaciones de formulas
 				t1_StepAIC<-proc.time()
 				time_StepAIC<-time_StepAIC +(t1_StepAIC-t0_StepAIC)[3]
 
@@ -341,7 +394,7 @@ t0<-proc.time()
 				time_StepBIC<-time_StepBIC +(t1_StepBIC-t0_StepBIC)[3]
 
 				if( grepl("Error",fit_AIC)[1]==FALSE && grepl("Error",fit_BIC)[1]==FALSE ){Check<-TRUE}
-			}
+			}#Hasta aqui el while de "arreglando" el problema de glm.nb
 			X<-data.frame("Intercept"=rep(1,N),covariables)
 			fit_AIC<-fit_AIC$fit
 			fit_BIC<-fit_BIC$fit
@@ -366,6 +419,7 @@ t0<-proc.time()
 
 		if(Regression=="SkewNormal")
 		{
+			#X<-matrix( c(rep(1, N), aux_cov), ncol=p )
 			X<-matrix( c(rep(1, N), rnorm((p -1)*N)), ncol=p )
 			Xbeta<-X%*%r_beta
 			r_w<-abs(rnorm(N, mean=0, sd=1))
@@ -375,13 +429,15 @@ t0<-proc.time()
 			base<-data.frame(y, covariables)		
 		}
 		X<-as.matrix(X)
+
 		
+		## Guardar "base" de la replica "k"
 		DataList[[k]]<-base
 
 
 
 		######################################
-		##		Our method		##
+		##		Nuestro metodo		##
 		######################################
 		t0_OurMethod<-proc.time()
 		## Gibbs
@@ -435,11 +491,15 @@ t0<-proc.time()
 				flag<-2
 			}
 		}
+		#SelectedModelsCountsOurMethod_rbind
+		#IndexSelectedModelsOurMethod_list
+
+
 
 				
-		## Posterior Mean and SD given the most selected model
+		## Las medias y sd a posteriori usando las iteraciones del modelo seleccionado
 		index_selected<-which(colSums(t(fit_OurMethod$model_chain) == SelectedModelOurMethod) == ncol(fit_OurMethod$model_chain))
-		coefs_chain<-fit_OurMethod$beta_chain[index_selected,]	
+		coefs_chain<-fit_OurMethod$beta_chain[index_selected,]	#Aqu� estoy sacando los beta's de las iteraciones del modelo seleccionado
 		CoefsMeanOurMethod_matrix[k,]<-apply(coefs_chain, 2, mean)
 		CoefsSDOurMethod_matrix[k,]<-apply(coefs_chain, 2, sd)
 
@@ -525,7 +585,6 @@ t0<-proc.time()
 
 
 
-
 		######################################
 		## 	 	 StepAIC glm 		##
 		######################################
@@ -533,36 +592,42 @@ t0<-proc.time()
 		if(Regression!="NegBinomial"){t0_StepAIC<-proc.time()}
 		if(Regression=="Normal")
 		{
-			fit<-glm(y~., data = base, family="gaussian")	
+			## Ajustando el modelo glm
+			fit<-glm(y~., data = base, family="gaussian")			#fit con todos los predictores
 			fit_AIC<-stepAIC(fit, trace=FALSE)
 		}
 
 		if(Regression=="Binomial")
 		{
-			fit<-glm(y/ni ~., data = base, family = "binomial", weights = ni)			
-			fit_AIC<-stepAIC(fit, trace=FALSE)										
+			## Ajustando el modelo glm
+			fit<-glm(y/ni ~., data = base, family = "binomial", weights = ni)			#fit con todos los predictores
+			fit_AIC<-stepAIC(fit, trace=FALSE)										#Aplicando StepAIC
 		}
 
 		if(Regression=="Quantile")
 		{
-			fit<-rq(y~., tau=r_alpha, data=base)			
-			fit_AIC<-stepAIC(fit, trace=FALSE)			
+			## Ajustando el modelo glm
+			fit<-rq(y~., tau=r_alpha, data=base)			#fit con todos los predictores
+			fit_AIC<-stepAIC(fit, trace=FALSE)				#Aplicando StepAIC
 		}
 		if(Regression=="SkewNormal")
 		{
+			## Step AIC
 			fit_AIC<-MyStepCriteria(Regression, PredictorsNames, base, Criteria="AIC" )$fit
 		}
 		if(Regression!="NegBinomial"){t1_StepAIC<-proc.time(); time_StepAIC<-time_StepAIC +(t1_StepAIC-t0_StepAIC)[3]}
-		
 
+
+
+		## Guardo los coeficientes del ajuste de esta iteracion y del real
 		if(Regression=="SkewNormal")
 		{ 
 			coef_stepAIC<-coef(fit_AIC, "DP")
-			PredNamesStepAIC<-head(names(coef_stepAIC)[c(-1)],-2)	
+			PredNamesStepAIC<-head(names(coef_stepAIC)[c(-1)],-2)	#Erasing intercept, omega, and alpha
 		}
 		if(Regression!="SkewNormal")
 		{
-			coef_stepAIC<-fit_AIC$coefficients								
+			coef_stepAIC<-fit_AIC$coefficients								#Sacando los coeficientes de fit_AIC
 			PredNamesStepAIC<-names(fit_AIC$coefficients)[-1]
 		}
 
@@ -588,15 +653,17 @@ t0<-proc.time()
 				flag<-2
 			}
 		}
+		#SelectedModelsCountsStepAIC_rbind
+		#IndexSelectedModelsStepAIC_list
 			
 		aux_betaIndex_1<-which(c(1,SelectedModelStepAIC)!=0)	#Indexes of beta's such that beta_j!=0 (including intercept)	
 		
 
 		## Coefficient estimated
 		aux_betaStepAIC<-rep(0,p)
-		if(Regression!="SkewNormal"){aux_betaStepAIC[aux_betaIndex_1]<-as.vector(coefficients(fit_AIC)) }		
+		if(Regression!="SkewNormal"){aux_betaStepAIC[aux_betaIndex_1]<-as.vector(coefficients(fit_AIC)) }		#Creando los beta's de esa iteraci�n, de la misma forma que con nuestro m�todo
 		if(Regression=="SkewNormal"){ aux_betaStepAIC[aux_betaIndex_1]<-as.vector(coefficients(fit_AIC, "DP"))[1:length(aux_betaIndex_1)] }
-		glmStepAICCoefsMatrix[k,]<-aux_betaStepAIC			
+		glmStepAICCoefsMatrix[k,]<-aux_betaStepAIC			#Actualizando la matriz de coeficientes de glmStepAIC
 	
 		## Other parameters estimates with their SD (Normal, NegBinomial, Skewnormal)
 		if(Regression=="NegBinomial")
@@ -618,29 +685,34 @@ t0<-proc.time()
 			glmStepAIC_sigma2SdVector[k]<-sqrt(2*(glmStepAIC_sigma2EstVector[k]^2)/(N-p_glmStepAIC))
 		}
 
+
 		## Coefficient's SD estimates
 		if(Regression!="Quantile" && Regression!="SkewNormal")	#For Normal, Binomial, and NegBinomial regression
 		{
 			aux_SdGlmStepAIC<-rep(0,p)
-			aux_SdGlmStepAIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_AIC)))[1:length(aux_betaIndex_1)]	
-			glmStepAICSdMatrix[k,]<-aux_SdGlmStepAIC			
+			aux_SdGlmStepAIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_AIC)))[1:length(aux_betaIndex_1)]		## Creando las sd de los beta's de esa iteraci�n, de la misma forma que con nuestro m�todo (Sin "DP" para SkewNormal, pues aun as� eso arroja s�lo los coeficientes)
+			glmStepAICSdMatrix[k,]<-aux_SdGlmStepAIC			#Actualizando la matriz de sd de glmCombinations
 		}
 		if(Regression=="Quantile")
 		{
 			aux_SdCoef<-summary.rq(fit_AIC, se="boot")
 			aux_SdGlmStepAIC<-rep(0,p)
-			aux_SdGlmStepAIC[aux_betaIndex_1]<-as.vector(aux_SdCoef$coefficients[,2])		
-			glmStepAICSdMatrix[k,]<-aux_SdGlmStepAIC			
+			aux_SdGlmStepAIC[aux_betaIndex_1]<-as.vector(aux_SdCoef$coefficients[,2])		## Creando las sd de los beta's de esa iteraci�n, de la misma forma que con nuestro m�todo
+			glmStepAICSdMatrix[k,]<-aux_SdGlmStepAIC			#Actualizando la matriz de sd de glmCombinations
 		}
 		if(Regression=="SkewNormal")
 		{
 			aux_SdGlmStepAIC<-rep(0,p)
-			aux_SdGlmStepAIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_AIC, "DP")))[1:length(aux_betaIndex_1)]	
-			glmStepAICSdMatrix[k,]<-aux_SdGlmStepAIC			
+			aux_SdGlmStepAIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_AIC, "DP")))[1:length(aux_betaIndex_1)]		## Creando las sd de los beta's de esa iteraci�n, de la misma forma que con nuestro m�todo
+			glmStepAICSdMatrix[k,]<-aux_SdGlmStepAIC			#Actualizando la matriz de sd de glmCombinations
 		}
 
+		#glmStepAICModelChain[k]<-ModelSelectedStepAIC				#Actualizando la matriz que cuenta el modelo elegido en cada r�plica
 	
-	
+
+
+
+
 		######################################
 		## 	 	 StepBIC glm 		##
 		######################################
@@ -655,7 +727,7 @@ t0<-proc.time()
 		if(Regression=="Binomial")
 		{
 			## Step BIC
-			fit_BIC<-MyStepCriteria(Regression, PredictorsNames, base, Criteria="BIC", ni=ni )$fit								
+			fit_BIC<-MyStepCriteria(Regression, PredictorsNames, base, Criteria="BIC", ni=ni )$fit								#Aplicando StepBIC
 		}
 
 		if(Regression=="Quantile")
@@ -671,7 +743,7 @@ t0<-proc.time()
 		if(Regression!="NegBinomial"){t1_StepBIC<-proc.time(); time_StepBIC<-time_StepBIC +(t1_StepBIC-t0_StepBIC)[3]}
 
 	
-		
+		## Guardo los coeficientes del ajuste de esta iteracion y del real
 		if(Regression=="SkewNormal")
 		{ 
 			coef_stepBIC<-coef(fit_BIC, "DP")
@@ -679,7 +751,7 @@ t0<-proc.time()
 		}
 		if(Regression!="SkewNormal")
 		{
-			coef_stepBIC<-fit_BIC$coefficients							
+			coef_stepBIC<-fit_BIC$coefficients								#Sacando los coeficientes de fit_BIC
 			PredNamesStepBIC<-names(fit_BIC$coefficients)[-1]
 		}
 
@@ -704,14 +776,16 @@ t0<-proc.time()
 				flag<-2
 			}
 		}
-
+		#SelectedModelsCountsStepBIC_rbind
+		#IndexSelectedModelsStepBIC_list
+	
 		aux_betaIndex_1<-which(c(1,SelectedModelStepBIC)!=0)	#Indexes of beta's such that beta_j!=0 (including intercept)	
 
 		## Coefficient estimated
 		aux_betaStepBIC<-rep(0,p)
-		if(Regression!="SkewNormal"){aux_betaStepBIC[aux_betaIndex_1]<-as.vector(coefficients(fit_BIC)) }		
+		if(Regression!="SkewNormal"){aux_betaStepBIC[aux_betaIndex_1]<-as.vector(coefficients(fit_BIC)) }		#Creando los beta's de esa iteraci�n, de la misma forma que con nuestro m�todo
 		if(Regression=="SkewNormal"){ aux_betaStepBIC[aux_betaIndex_1]<-as.vector(coefficients(fit_BIC, "DP"))[1:length(aux_betaIndex_1)] }
-		glmStepBICCoefsMatrix[k,]<-aux_betaStepBIC			
+		glmStepBICCoefsMatrix[k,]<-aux_betaStepBIC			#Actualizando la matriz de coeficientes de glmStepBIC
 	
 		## Other parameters estimates with their SD (Normal, NegBinomial, Skewnormal)
 		if(Regression=="NegBinomial")
@@ -738,24 +812,25 @@ t0<-proc.time()
 		if(Regression!="Quantile" && Regression!="SkewNormal")	#For Normal, Binomial, and NegBinomial regression
 		{
 			aux_SdGlmStepBIC<-rep(0,p)
-			aux_SdGlmStepBIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_BIC)))[1:length(aux_betaIndex_1)]		 
-			glmStepBICSdMatrix[k,]<-aux_SdGlmStepBIC		
+			aux_SdGlmStepBIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_BIC)))[1:length(aux_betaIndex_1)]		## Creando las sd de los beta's de esa iteraci�n, de la misma forma que con nuestro m�todo (Sin "DP" para SkewNormal, pues aun as� eso arroja s�lo los coeficientes)
+			glmStepBICSdMatrix[k,]<-aux_SdGlmStepBIC			#Actualizando la matriz de sd de glmCombinations
 		}
 		if(Regression=="Quantile")
 		{
 			aux_SdCoef<-summary.rq(fit_BIC, se="boot")
 			aux_SdGlmStepBIC<-rep(0,p)
-			aux_SdGlmStepBIC[aux_betaIndex_1]<-as.vector(aux_SdCoef$coefficients[,2])		
-			glmStepBICSdMatrix[k,]<-aux_SdGlmStepBIC			
+			aux_SdGlmStepBIC[aux_betaIndex_1]<-as.vector(aux_SdCoef$coefficients[,2])		## Creando las sd de los beta's de esa iteraci�n, de la misma forma que con nuestro m�todo
+			glmStepBICSdMatrix[k,]<-aux_SdGlmStepBIC			#Actualizando la matriz de sd de glmCombinations
 		}
 		if(Regression=="SkewNormal")
 		{
 			aux_SdGlmStepBIC<-rep(0,p)
-			aux_SdGlmStepBIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_BIC, "DP")))[1:length(aux_betaIndex_1)]	
-			glmStepBICSdMatrix[k,]<-aux_SdGlmStepBIC			
+			aux_SdGlmStepBIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_BIC, "DP")))[1:length(aux_betaIndex_1)]		## Creando las sd de los beta's de esa iteraci�n, de la misma forma que con nuestro m�todo
+			glmStepBICSdMatrix[k,]<-aux_SdGlmStepBIC			#Actualizando la matriz de sd de glmCombinations
 		}
 
-		## Uncomment this if you want to save the simulated data
+		#glmStepBICModelChain[k]<-ModelSelectedStepBIC				#Actualizando la matriz que cuenta el modelo elegido en cada r�plica
+
 		#text_save<-paste0(Regression,"_","Size",N,"_","p",r_p,"",".Rdata")
 		#save.image(file=text_save)
 	
@@ -769,84 +844,88 @@ t0<-proc.time()
 	## Our method
 	MostSelectedModelOurMethod<-as.numeric(which(SelectedModelsCountsOurMethod_rbind[,p] ==max(SelectedModelsCountsOurMethod_rbind[,p])) )
 	IndexReplicaMostSelectedOurMethod<-IndexSelectedModelsOurMethod_list[[MostSelectedModelOurMethod]]
-	mean_posterior_mean<-mms_apply(CoefsMeanOurMethod_matrix[IndexReplicaMostSelectedOurMethod,], mean)		
-	median_posterior_mean<-mms_apply(CoefsMeanOurMethod_matrix[IndexReplicaMostSelectedOurMethod,], median)
-	sd_posterior_mean<-mms_apply(CoefsSDOurMethod_matrix[IndexReplicaMostSelectedOurMethod,], mean)		
+	mean_posterior_mean<-mms_apply(CoefsMeanOurMethod_matrix[IndexReplicaMostSelectedOurMethod,], mean)		#Media de las medias a posteriori de las iteraciones con el modelo m�s elegido
+	median_posterior_mean<-mms_apply(CoefsMeanOurMethod_matrix[IndexReplicaMostSelectedOurMethod,], median)	#Mediana de las medias a posteriori de las iteraciones con el modelo m�s elegido
+	sd_posterior_mean<-mms_apply(CoefsSDOurMethod_matrix[IndexReplicaMostSelectedOurMethod,], mean)			#sd a posterioris de las iteraciones con el modelo m�s elegido (es la sd de las r�plicas, no la media de las sd)
 
 	SelectedModelOurMethodNames<-colnames(SelectedModelsCountsOurMethod_rbind)[which(SelectedModelsCountsOurMethod_rbind[MostSelectedModelOurMethod, -p]==1)]
 	SelectedModelOurMethodFormula<-paste0(SelectedModelOurMethodNames, collapse = "+")
-	SelectedModelCountOurMethod_summary<-data.frame(SelectedModel=SelectedModelOurMethodFormula, Count=length(IndexReplicaMostSelectedOurMethod), time=time_OurMethod)	
+	SelectedModelCountOurMethod_summary<-data.frame(SelectedModel=SelectedModelOurMethodFormula, Count=length(IndexReplicaMostSelectedOurMethod), time=time_OurMethod)	#data frame con la "formula" del modelo m�s elegido y las veces que salio
 
 
 	## Rusell LA
 	MostSelectedModelLA<-as.numeric(which(SelectedModelsCountsLA_rbind[,p] ==max(SelectedModelsCountsLA_rbind[,p])) )
 	if( length(MostSelectedModelLA)>1 ){MostSelectedModelLA<-MostSelectedModelLA[1]}
 	IndexReplicaMostSelectedLA<-IndexSelectedModelsLA_list[[MostSelectedModelLA]]
-	mean_CoefsMeanLA<-mms_apply(CoefsMeanLA_matrix[IndexReplicaMostSelectedLA,], mean)		
-	median_CoefsMeanLA<-mms_apply(CoefsMeanLA_matrix[IndexReplicaMostSelectedLA,], median)	
-	sd_CoefsMeanLA<-mms_apply(CoefsMeanLA_matrix[IndexReplicaMostSelectedLA,], sd)		
+	mean_CoefsMeanLA<-mms_apply(CoefsMeanLA_matrix[IndexReplicaMostSelectedLA,], mean)		#Media de las medias a posteriori de las iteraciones con el modelo m�s elegido
+	median_CoefsMeanLA<-mms_apply(CoefsMeanLA_matrix[IndexReplicaMostSelectedLA,], median)	#Mediana de las medias a posteriori de las iteraciones con el modelo m�s elegido
+	sd_CoefsMeanLA<-mms_apply(CoefsMeanLA_matrix[IndexReplicaMostSelectedLA,], sd)			#sd de las replicas del modelo m�s elegido (es la sd de las r�plicas, no la media de las sd)
 
 	SelectedModelLANames<-colnames(SelectedModelsCountsLA_rbind)[which(SelectedModelsCountsLA_rbind[MostSelectedModelLA, -(p+1)]==1)]
 	SelectedModelLAFormula<-paste0(SelectedModelLANames, collapse = "+")
-	SelectedModelCountLA_summary<-data.frame(SelectedModel=SelectedModelLAFormula, Count=length(IndexReplicaMostSelectedLA), time=time_LA)	
+	SelectedModelCountLA_summary<-data.frame(SelectedModel=SelectedModelLAFormula, Count=length(IndexReplicaMostSelectedLA), time=time_LA)	#data frame con la "formula" del modelo m�s elegido y las veces que sali�
 
 
 	## For stepAIC glm method	
 	MostSelectedModelStepAIC<-as.numeric(which(SelectedModelsCountsStepAIC_rbind[,p] ==max(SelectedModelsCountsStepAIC_rbind[,p])) )
 	if( length(MostSelectedModelStepAIC)>1 ){MostSelectedModelStepAIC<-MostSelectedModelStepAIC[1]}
 	IndexReplicaMostSelectedStepAIC<-IndexSelectedModelsStepAIC_list[[MostSelectedModelStepAIC]]
-	glmStepAIC_mean<-mms_apply(glmStepAICCoefsMatrix[IndexReplicaMostSelectedStepAIC,], mean)	
-	glmStepAIC_median<-mms_apply(glmStepAICCoefsMatrix[IndexReplicaMostSelectedStepAIC,], median)	
-	glmStepAIC_sd_iter<-mms_apply(glmStepAICSdMatrix[IndexReplicaMostSelectedStepAIC,], mean)	
+	glmStepAIC_mean<-mms_apply(glmStepAICCoefsMatrix[IndexReplicaMostSelectedStepAIC,], mean)	#Media de los coeficientes de las iteraciones con el modelo m�s elegido
+	glmStepAIC_median<-mms_apply(glmStepAICCoefsMatrix[IndexReplicaMostSelectedStepAIC,], median)	#Mediana de los coeficientes de las iteraciones con el modelo m�s elegido
+	glmStepAIC_sd_iter<-mms_apply(glmStepAICSdMatrix[IndexReplicaMostSelectedStepAIC,], mean)	#sd de los coeficientes de las iteraciones con el modelo m�s elegido (es la sd de las r�plicas, no la media de las sd)
 	SelectedModelStepAICNames<-colnames(SelectedModelsCountsStepAIC_rbind)[which(SelectedModelsCountsStepAIC_rbind[MostSelectedModelStepAIC, -p]==1)]
 	SelectedModelStepAICFormula<-paste0(SelectedModelStepAICNames, collapse = "+")
-	SelectedModelCountStepAIC_summary<-data.frame(SelectedModel=SelectedModelStepAICFormula, Count=length(IndexReplicaMostSelectedStepAIC), time=time_StepAIC)	
+	SelectedModelCountStepAIC_summary<-data.frame(SelectedModel=SelectedModelStepAICFormula, Count=length(IndexReplicaMostSelectedStepAIC), time=time_StepAIC)	#data frame con la "formula" del modelo m�s elegido y las veces que sali�
+
 
 
 	## For stepBIC glm method	
 	MostSelectedModelStepBIC<-as.numeric(which(SelectedModelsCountsStepBIC_rbind[,p] ==max(SelectedModelsCountsStepBIC_rbind[,p])) )
 	if( length(MostSelectedModelStepBIC)>1 ){MostSelectedModelStepBIC<-MostSelectedModelStepBIC[1]}
 	IndexReplicaMostSelectedStepBIC<-IndexSelectedModelsStepBIC_list[[MostSelectedModelStepBIC]]
-	glmStepBIC_mean<-mms_apply(glmStepBICCoefsMatrix[IndexReplicaMostSelectedStepBIC,], mean)	
-	glmStepBIC_median<-mms_apply(glmStepBICCoefsMatrix[IndexReplicaMostSelectedStepBIC,], median)	
-	glmStepBIC_sd_iter<-mms_apply(glmStepBICSdMatrix[IndexReplicaMostSelectedStepBIC,], mean)	
+	glmStepBIC_mean<-mms_apply(glmStepBICCoefsMatrix[IndexReplicaMostSelectedStepBIC,], mean)	#Media de los coeficientes de las iteraciones con el modelo m�s elegido
+	glmStepBIC_median<-mms_apply(glmStepBICCoefsMatrix[IndexReplicaMostSelectedStepBIC,], median)	#Mediana de los coeficientes de las iteraciones con el modelo m�s elegido
+	glmStepBIC_sd_iter<-mms_apply(glmStepBICSdMatrix[IndexReplicaMostSelectedStepBIC,], mean)	#sd de los coeficientes de las iteraciones con el modelo m�s elegido (es la sd de las r�plicas, no la media de las sd)
 	SelectedModelStepBICNames<-colnames(SelectedModelsCountsStepBIC_rbind)[which(SelectedModelsCountsStepBIC_rbind[MostSelectedModelStepBIC, -p]==1)]
 	SelectedModelStepBICFormula<-paste0(SelectedModelStepBICNames, collapse = "+")
-	SelectedModelCountStepBIC_summary<-data.frame(SelectedModel=SelectedModelStepBICFormula, Count=length(IndexReplicaMostSelectedStepBIC), time=time_StepBIC)	
+	SelectedModelCountStepBIC_summary<-data.frame(SelectedModel=SelectedModelStepBICFormula, Count=length(IndexReplicaMostSelectedStepBIC), time=time_StepBIC)	#data frame con la "formula" del modelo m�s elegido y las veces que sali�
 
-	
+
+
+	## Agregando "r" de la regresi�n NegBinomial
 	if(Regression=="NegBinomial")
 	{
 		mean_posterior_mean<-c(mean(r_mean_vector[IndexReplicaMostSelectedOurMethod]), mean_posterior_mean)
 		median_posterior_mean<-c(median(r_mean_vector[IndexReplicaMostSelectedOurMethod]), median_posterior_mean)
 		sd_posterior_mean<-c(mean(r_sd_vector[IndexReplicaMostSelectedOurMethod]), sd_posterior_mean)
 
-		glmStepAIC_mean<-c(mean(glmStepAIC_rEstVector),glmStepAIC_mean)
-		glmStepAIC_median<-c(median(glmStepAIC_rEstVector),glmStepAIC_median)
-		glmStepAIC_sd_iter<-c(mean(glmStepAIC_rSdVector),glmStepAIC_sd_iter)
+		glmStepAIC_mean<-c(mean(glmStepAIC_rEstVector[IndexReplicaMostSelectedStepAIC]),glmStepAIC_mean)
+		glmStepAIC_median<-c(median(glmStepAIC_rEstVector[IndexReplicaMostSelectedStepAIC]),glmStepAIC_median)
+		glmStepAIC_sd_iter<-c(mean(glmStepAIC_rSdVector[IndexReplicaMostSelectedStepAIC]),glmStepAIC_sd_iter)
 
-		glmStepBIC_mean<-c(mean(glmStepBIC_rEstVector),glmStepBIC_mean)
-		glmStepBIC_median<-c(median(glmStepBIC_rEstVector),glmStepBIC_median)
-		glmStepBIC_sd_iter<-c(mean(glmStepBIC_rSdVector),glmStepBIC_sd_iter)
+		glmStepBIC_mean<-c(mean(glmStepBIC_rEstVector[IndexReplicaMostSelectedStepBIC]),glmStepBIC_mean)
+		glmStepBIC_median<-c(median(glmStepBIC_rEstVector[IndexReplicaMostSelectedStepBIC]),glmStepBIC_median)
+		glmStepBIC_sd_iter<-c(mean(glmStepBIC_rSdVector[IndexReplicaMostSelectedStepBIC]),glmStepBIC_sd_iter)
 	}
 
-
+	## Agregando summary de lambda,sigma2 de la regresion SkewNormal
 	if(Regression=="SkewNormal")
 	{
 		mean_posterior_mean<-c(mean(lambda_mean_vector[IndexReplicaMostSelectedOurMethod]), mean(sigma2_mean_vector[IndexReplicaMostSelectedOurMethod]), mean_posterior_mean)
 		median_posterior_mean<-c(median(lambda_mean_vector[IndexReplicaMostSelectedOurMethod]), median(sigma2_mean_vector[IndexReplicaMostSelectedOurMethod]), median_posterior_mean)
 		sd_posterior_mean<-c(mean(lambda_sd_vector[IndexReplicaMostSelectedOurMethod]), mean(sigma2_sd_vector[IndexReplicaMostSelectedOurMethod]), sd_posterior_mean)
 		
-		glmStepAIC_mean<-c(mean(glmStepAIC_lambdaEstVector), mean(glmStepAIC_sigma2EstVector), glmStepAIC_mean)
-		glmStepAIC_median<-c(median(glmStepAIC_lambdaEstVector), median(glmStepAIC_sigma2EstVector), glmStepAIC_median)
-		glmStepAIC_sd_iter<-c(mean(glmStepAIC_lambdaSdVector), mean(glmStepAIC_sigma2SdVector), glmStepAIC_sd_iter)
+		glmStepAIC_mean<-c(mean(glmStepAIC_lambdaEstVector[IndexReplicaMostSelectedStepAIC]), mean(glmStepAIC_sigma2EstVector[IndexReplicaMostSelectedStepAIC]), glmStepAIC_mean)
+		glmStepAIC_median<-c(median(glmStepAIC_lambdaEstVector[IndexReplicaMostSelectedStepAIC]), median(glmStepAIC_sigma2EstVector[IndexReplicaMostSelectedStepAIC]), glmStepAIC_median)
+		glmStepAIC_sd_iter<-c(mean(glmStepAIC_lambdaSdVector[IndexReplicaMostSelectedStepAIC]), mean(glmStepAIC_sigma2SdVector[IndexReplicaMostSelectedStepAIC]), glmStepAIC_sd_iter)
 
-		glmStepBIC_mean<-c(mean(glmStepBIC_lambdaEstVector), mean(glmStepBIC_sigma2EstVector), glmStepBIC_mean)
-		glmStepBIC_median<-c(median(glmStepBIC_lambdaEstVector), median(glmStepBIC_sigma2EstVector), glmStepBIC_median)
-		glmStepBIC_sd_iter<-c(mean(glmStepBIC_lambdaSdVector), mean(glmStepBIC_sigma2SdVector), glmStepBIC_sd_iter)
+		glmStepBIC_mean<-c(mean(glmStepBIC_lambdaEstVector[IndexReplicaMostSelectedStepBIC]), mean(glmStepBIC_sigma2EstVector[IndexReplicaMostSelectedStepBIC]), glmStepBIC_mean)
+		glmStepBIC_median<-c(median(glmStepBIC_lambdaEstVector[IndexReplicaMostSelectedStepBIC]), median(glmStepBIC_sigma2EstVector[IndexReplicaMostSelectedStepBIC]), glmStepBIC_median)
+		glmStepBIC_sd_iter<-c(mean(glmStepBIC_lambdaSdVector[IndexReplicaMostSelectedStepBIC]), mean(glmStepBIC_sigma2SdVector[IndexReplicaMostSelectedStepBIC]), glmStepBIC_sd_iter)
 
 	}
 
+	## Agregando summary de sigma2 de la regresion Normal y Quantile
 	if(Regression=="Normal" || Regression=="Quantile")
 	{
 		mean_posterior_mean<-c(mean(sigma2_mean_vector[IndexReplicaMostSelectedOurMethod]), mean_posterior_mean)
@@ -855,17 +934,17 @@ t0<-proc.time()
 
 		if(Regression=="Normal")	#rq() doesn't provide a sigma2 estimate
 		{
-			mean_CoefsMeanLA<-c(mean(Sigma2MeanLA_vector[IndexReplicaMostSelectedOurMethod]), mean_CoefsMeanLA)
-			median_CoefsMeanLA<-c(median(Sigma2MeanLA_vector[IndexReplicaMostSelectedOurMethod]), median_CoefsMeanLA)
-			sd_CoefsMeanLA<-c(sd(Sigma2MeanLA_vector[IndexReplicaMostSelectedOurMethod]), sd_CoefsMeanLA)
+			mean_CoefsMeanLA<-c(mean(Sigma2MeanLA_vector[IndexReplicaMostSelectedLA]), mean_CoefsMeanLA)
+			median_CoefsMeanLA<-c(median(Sigma2MeanLA_vector[IndexReplicaMostSelectedLA]), median_CoefsMeanLA)
+			sd_CoefsMeanLA<-c(sd(Sigma2MeanLA_vector[IndexReplicaMostSelectedLA]), sd_CoefsMeanLA)
 
-			glmStepAIC_mean<-c(mean(glmStepAIC_sigma2EstVector), glmStepAIC_mean)
-			glmStepAIC_median<-c(median(glmStepAIC_sigma2EstVector), glmStepAIC_median)
-			glmStepAIC_sd_iter<-c(mean(glmStepAIC_sigma2SdVector), glmStepAIC_sd_iter)
+			glmStepAIC_mean<-c(mean(glmStepAIC_sigma2EstVector[IndexReplicaMostSelectedStepAIC]), glmStepAIC_mean)
+			glmStepAIC_median<-c(median(glmStepAIC_sigma2EstVector[IndexReplicaMostSelectedStepAIC]), glmStepAIC_median)
+			glmStepAIC_sd_iter<-c(mean(glmStepAIC_sigma2SdVector[IndexReplicaMostSelectedStepAIC]), glmStepAIC_sd_iter)
 
-			glmStepBIC_mean<-c(mean(glmStepBIC_sigma2EstVector), glmStepBIC_mean)
-			glmStepBIC_median<-c(median(glmStepBIC_sigma2EstVector), glmStepBIC_median)
-			glmStepBIC_sd_iter<-c(mean(glmStepBIC_sigma2SdVector), glmStepBIC_sd_iter)
+			glmStepBIC_mean<-c(mean(glmStepBIC_sigma2EstVector[IndexReplicaMostSelectedStepBIC]), glmStepBIC_mean)
+			glmStepBIC_median<-c(median(glmStepBIC_sigma2EstVector[IndexReplicaMostSelectedStepBIC]), glmStepBIC_median)
+			glmStepBIC_sd_iter<-c(mean(glmStepBIC_sigma2SdVector[IndexReplicaMostSelectedStepBIC]), glmStepBIC_sd_iter)
 
 		}
 	}
@@ -875,16 +954,18 @@ t0<-proc.time()
 	if(Regression=="NegBinomial"){CoefNames<-c("r", CoefNames)}
 	if(Regression=="SkewNormal"){CoefNames<-c("lambda", "sigma2", CoefNames)}
 	if(Regression=="Normal" || Regression=="Quantile"){CoefNames<-c("sigma2", CoefNames)}
-	OurMethodResult<-data.frame(mean=mean_posterior_mean, median=median_posterior_mean, sd=sd_posterior_mean)				
+	OurMethodResult<-data.frame(mean=mean_posterior_mean, median=median_posterior_mean, sd=sd_posterior_mean)		#data.frame con la media, mediana y sd de nuestro metodo		
 	LAResult<-data.frame(mean=mean_CoefsMeanLA, median=median_CoefsMeanLA, sd=sd_CoefsMeanLA)
-	StepAICMethodResult<-data.frame(mean=glmStepAIC_mean, median=glmStepAIC_median, sd=glmStepAIC_sd_iter)		
+	StepAICMethodResult<-data.frame(mean=glmStepAIC_mean, median=glmStepAIC_median, sd=glmStepAIC_sd_iter)		#data.frame con la media, mediana y sd de glmStepAIC
 	StepBICMethodResult<-data.frame(mean=glmStepBIC_mean, median=glmStepBIC_median, sd=glmStepBIC_sd_iter)
-	rownames(OurMethodResult)<-CoefNames			
+	rownames(OurMethodResult)<-CoefNames			#Asignando lo nombres de las covariables al data.frame (X1,X2,...)
 	if(Regression=="Normal" || Regression=="Binomial"){rownames(LAResult)<-CoefNames}
 	if(Regression=="Quantile"){rownames(StepAICMethodResult)<-CoefNames[-1]; rownames(StepBICMethodResult)<-CoefNames[-1]}else{
 					rownames(StepAICMethodResult)<-CoefNames; rownames(StepBICMethodResult)<-CoefNames}
 
-	
+	#text_save<-paste0(Regression,"_",DataIter,"_","Size",N,".Rdata")
+	#save.image(file=text_save)
+
 	aux<-list(DataList=DataList, coefs_PostMean_matrix_OurMethod=CoefsMeanOurMethod_matrix,	
 	True_Model= TruePredFormula, "Selected_Model_Count_OurMethod"=SelectedModelCountOurMethod_summary, 
 	"Selected_Model_Count_LA"=SelectedModelCountLA_summary,
