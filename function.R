@@ -9,6 +9,7 @@ print.BMS <- function(m){
 }
 
 
+
 ## Womack prior
 womack = function(K, rho)
 {
@@ -51,7 +52,7 @@ rCRT<-function(n,b,c)
 
 ## Gibbs Sampler for Bayesian variable selection models via a spike-and-slab methodology.
 gibbs_abms<-function(y, Covariates, family="LiR", first_excluded=0, nchain=10000, burnin=2000, tau2=1000, rho=1, ni=rep(1, length(y)), alpha=0.5,
-                     a0=1, b0=1, d=2, b2=1/2, model_fixed=NULL, womack=TRUE, a_bb=1, b_bb=1, count.iteration=TRUE )
+                     a0=1, b0=1, d=2, b2=1/2, model_fixed=NULL, WomackPrior=TRUE, a_bb=1, b_bb=1, count.iteration=TRUE )
 {
   if((class(y)!="numeric" && class(y)!="integer")  || is.vector(y)==FALSE){stop(paste("'y' must be a numeric or integer vector")) }
   if(class(Covariates)[1]!="data.frame" && (is.matrix(Covariates)==FALSE)){stop(paste("'Covariates' must be a data.frame or a matrix")) }
@@ -170,7 +171,7 @@ gibbs_abms<-function(y, Covariates, family="LiR", first_excluded=0, nchain=10000
 
   log_tau2<-base::log(tau2)
   frac_tau2<-1/tau2
-  if(womack==TRUE){ log_gamma_prior<-base::log(womack(p_selection,rho)) }else{
+  if(WomackPrior==TRUE){ log_gamma_prior<-base::log(womack(p_selection,rho)) }else{
   			    log_gamma_prior<-log( BetaBinomialPrior(p=p_selection, a=a_bb, b=b_bb) )
 			  }
 
