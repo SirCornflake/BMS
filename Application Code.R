@@ -1,5 +1,5 @@
 setwd("")
-source("functions.R")
+source("function.R")
 library(dplyr)
 library(correlationfunnel)
 library(ggplot2)
@@ -166,7 +166,7 @@ QR_PredPlot<-function(base, Latextable)
 ## 		Loading data-base				##
 ##################################################
 
-base<-read.csv("::/ens.csv")
+base<-read.csv("ens.csv")
 head(base)
 
 ## pas base
@@ -192,7 +192,7 @@ fit_Pad<-list()
 for(i in 1:length(r_alpha))
 {
 	cat("  Quantile", r_alpha[i], "\r")
-	fit_Pad[[i]]<-gibbs_abms(y, Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, r_alpha[i],
+	fit_Pad[[i]]<-gibbs_abms(y=y, Covariates=Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, alpha=r_alpha[i],
 			  a0=1, b0=1, count.iteration=FALSE )
 }
 
@@ -208,7 +208,7 @@ fit_Pas<-list()
 for(i in 1:length(r_alpha))
 {
 	cat("  Quantile", r_alpha[i], "\r")
-	fit_Pas[[i]]<-gibbs_abms(y, Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, r_alpha[i],
+	fit_Pas[[i]]<-gibbs_abms(y=y, Covariates=Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, alpha=r_alpha[i],
 			  a0=1, b0=1, count.iteration=FALSE )
 }
 
