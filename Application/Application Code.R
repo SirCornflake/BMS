@@ -8,9 +8,9 @@ library(ggplot2)
 library(ggpubr)
 ##################################################################################################################################################
 
-########################################################
-## 			Just run this first			##
-########################################################
+################################################################################
+##				Some functions, Just run this					##
+################################################################################
 
 ## QR Application: Latex Summary table per quantile
 QR_LatexTable<-function(fit, covaribles, r_alpha)
@@ -216,7 +216,7 @@ for(i in 1:length(r_alpha))
 }
 
 
-save.image("Application_Ens_Seed31415_2.Rdata")
+#save.image("Application_Ens_Seed31415_2.Rdata")
 
 ########################################################
 ## 		Pas and Pad summary Tables			##
