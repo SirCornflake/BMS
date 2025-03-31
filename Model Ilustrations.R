@@ -18,9 +18,9 @@ nchain=10000; burnin=2000
 
 ## Fitting the model
 fit<- gibbs_abms(y=y, Covariates=Covariates, family="LiR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1,
-a0=1, b0=1, count.iteration=TRUE )
+a0=1, b0=1, count.iteration=TRUE)
 
-summary_gibbs(fit, BF=TRUE)	#Summary results
+summary_gibbs(fit)	#Summary results
 
 ##################################################
 ## 		Gibbs for Logistic regression		##
@@ -37,9 +37,9 @@ nchain=10000; burnin=2000
 
 ## Fit
 fit<-gibbs_abms(y, Covariates, family="LoR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, ni=rep(1, length(y)),
-count.iteration=TRUE )
+count.iteration=TRUE)
 
-summary_gibbs(fit, BF=TRUE)	#Summary results
+summary_gibbs(fit)	#Summary results
 
 ########################################################
 ## 	Gibbs for Negative binomial regression		##
@@ -58,7 +58,7 @@ nchain=10000; burnin<-2000
 fit<-gibbs_abms(y, Covariates, family="NBR", first_excluded=0, nchain=10000, burnin=2000, tau2=1000, rho=1,
 a0=1, b0=1, count.iteration=TRUE )
 
-summary_gibbs(fit, BF=TRUE)	#Summary results
+summary_gibbs(fit)	#Summary results
 
 ##################################################
 ## 		Gibbs for Quantile Regession 		##
@@ -78,7 +78,7 @@ nchain<-10000; burnin<-2000
 fit<-gibbs_abms(y, Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, alpha=0.5,
 a0=1, b0=1, count.iteration=TRUE )
 
-summary_gibbs(fit, BF=TRUE)	#Summary results
+summary_gibbs(fit)	#Summary results
 
 
 ########################################################
@@ -102,4 +102,4 @@ d=2; b2=1/2			#delta uniform(-1,1) prior
 fit<-gibbs_abms(y, Covariates, family="SNR", first_excluded=0, nchain=10000, burnin=2000, tau2=1000, rho=1,
 a0=1, b0=1, d=2, b2=1/2, count.iteration=TRUE )
 
-summary_gibbs(fit, BF=TRUE)	#Summary results
+summary_gibbs(fit)	#Summary results
