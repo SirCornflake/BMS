@@ -9,10 +9,8 @@ These files contain the necessary functions to perform a Bayesian model selectio
 
 3. "Simulation Study.R": A R script where the simulation study's tables and figures of the manuscript and supplementary material can be reproduced
 
-4. "Application" folder: Contains the necessary files to reproduce the illustration of the manuscript. The files are:
- 	a)"Application Code.R": A R script where the application results can be replicated For the Application reproducibility. To do that:
-		-) Load the data-base, 
-		-) Fit the models
-		-) Run Table estimation, credible interval plot, and prediction plot to replicate the Manuscript tables and plots
-   	b) "ens.csv": A ".csv" file that contains the data set used in the "Application Code.R" file
-   	c) “ens_description.pdf”: Data dictionary for the "ens" data-set
+4. "Application Code.R": A R script where the application results can be replicated For the Application reproducibility. It is held in the "Application" folder.
+
+5. "ens.csv": A ".csv" file that contains the data set used in the "Application Code.R" file. It is held in the "Application" folder.
+
+6. “ens_description.pdf”: Data dictionary for the "ens" data-set. It is held in the "Application" folder.
