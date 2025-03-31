@@ -1322,8 +1322,8 @@ set.seed(31415)
 ########################################################
 
 ## Fixing some values
-R<-10	#Number of experiments
-nchain<-2000; burnin<-20	#chain large and burn-in
+R<-100	#Number of experiments
+nchain<-10000; burnin<-2000	#chain large and burn-in
 tau2<-1000; rho<-1	#tau and rho value
 r_sigma2<-2		#value of the true sigma^2
 Regression<-"LiR"
@@ -1376,21 +1376,21 @@ ConfusionPlot_n20<-ggplotConfusionMatrix(ConfusionTable_n20, Replicas=R, main="n
 ## n=50
 aux<-aux_n50
 ConfusionTable_n50<-ConfusionMatrix(aux, gamma_matrix)
-ConfusionPlot_n50<-ggplotConfusionMatrix(ConfusionTable_n50, main="n=50", ylab=FALSE, xlab=FALSE, legend=TRUE)
+ConfusionPlot_n50<-ggplotConfusionMatrix(ConfusionTable_n50, Replicas=R, main="n=50", ylab=FALSE, xlab=FALSE, legend=TRUE)
 
 ## n=100
 aux<-aux_n100
 ConfusionTable_n100<-ConfusionMatrix(aux, gamma_matrix)
-ConfusionPlot_n100<-ggplotConfusionMatrix(ConfusionTable_n100, main="n=100", ylab=TRUE, xlab=TRUE, legend=FALSE)
+ConfusionPlot_n100<-ggplotConfusionMatrix(ConfusionTable_n100, Replicas=R, main="n=100", ylab=TRUE, xlab=TRUE, legend=FALSE)
 
 ## n=200
 aux<-aux_n200
 ConfusionTable_n200<-ConfusionMatrix(aux, gamma_matrix)
-ConfusionPlot_n200<-ggplotConfusionMatrix(ConfusionTable_n200, main="n=200", ylab=TRUE, xlab=TRUE, legend=TRUE)
+ConfusionPlot_n200<-ggplotConfusionMatrix(ConfusionTable_n200, Replicas=R, main="n=200", ylab=TRUE, xlab=TRUE, legend=TRUE)
 
 
 ## Final Confussion Matrix plot
-figure<-ggarrange(ConfusionPlot_n20, ConfusionPlot_n20, ConfusionPlot_n20, ConfusionPlot_n20,
+figure<-ggarrange(ConfusionPlot_n20, ConfusionPlot_n50, ConfusionPlot_n100, ConfusionPlot_n200,
 nrow=2, ncol=2, common.legend = TRUE, legend="right",
           widths = c(2,2),          # Adjust widths to control horizontal spacing
           heights = c(2,2),         # Adjust heights to control vertical spacing
@@ -1403,7 +1403,7 @@ figure
 ########################################################################################################
 
 R<-100	#Number of experiments
-nchain<-2000; burnin<-20	#chain large and burn-in
+nchain<-10000; burnin<-2000	#chain large and burn-in
 tau2<-1000; rho<-1	#tau and rho value
 
 ############################################
