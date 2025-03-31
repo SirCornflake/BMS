@@ -208,7 +208,7 @@ Covariates<-base_pas[,-1]
 nchain<-10000; burnin<-2000
 r_alpha<-c(0.01, seq(0.05,0.95, 0.10))
 fit_Pas<-list()
-for(i in 10:length(r_alpha))
+for(i in 1:length(r_alpha))
 {
 	cat("  Quantile", r_alpha[i], "\r")
 	fit_Pas[[i]]<-gibbs_abms(y=y, Covariates=Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, alpha=r_alpha[i],
