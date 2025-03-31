@@ -169,7 +169,7 @@ mms_apply<-function(matrix, statistic, ...)
 
 
 ## Summary of the simulation study result
-Summary_SimStudy<-function(aux, ExploredModels=TRUE)
+Summary_SimStudy<-function(aux, ExploredModels=TRUE, StepFit=TRUE, StepVcov=TRUE)
 {
 	##########################
 	##   Explored models    ##
@@ -181,8 +181,11 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	ExploredMOurMethod_womack<-data.frame(aux$Model_Exploration_OurMethod_womack)
 	ExploredMOurMethod_bb<-data.frame(aux$Model_Exploration_OurMethod_bb)
 	ExploredMLA<-data.frame(aux$Model_Exploration_LA)	#DE AH� CAMBIAR ESTO, PUES YA FUE ARREGLADO EN EL CODIGO
+	if(StepFit==TRUE)
+	{
 	ExploredMStepAIC<-data.frame(aux$Model_Exploration_StepAIC)
 	ExploredMStepBIC<-data.frame(aux$Model_Exploration_StepBIC)
+	}
 
 
 	## Changing predictor colnames for Latex
@@ -191,22 +194,31 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	colnames(ExploredMOurMethod_womack)[-r_p]<-aux_namespred
 	colnames(ExploredMOurMethod_bb)[-r_p]<-aux_namespred
 	colnames(ExploredMLA)[-r_p]<-aux_namespred
+	if(StepFit==TRUE)
+	{
 	colnames(ExploredMStepAIC)[-r_p]<-aux_namespred
 	colnames(ExploredMStepBIC)[-r_p]<-aux_namespred
+	}
 	
 
 	## Sorting rows by frequency
 	ExploredMOurMethod_womack<- rbind(ExploredMOurMethod_womack[1,],  ExploredMOurMethod_womack[-1,][order(ExploredMOurMethod_womack[-1,]$Frequency, decreasing=TRUE),] )
 	ExploredMOurMethod_bb<- rbind(ExploredMOurMethod_bb[1,],  ExploredMOurMethod_bb[-1,][order(ExploredMOurMethod_bb[-1,]$Frequency, decreasing=TRUE),] )
 	ExploredMLA<- rbind(ExploredMLA[1,],  ExploredMLA[-1,][order(ExploredMLA[-1,]$Frequency, decreasing=TRUE),] )
+	if(StepFit==TRUE)
+	{
 	ExploredMStepAIC<- rbind(ExploredMStepAIC[1,],  ExploredMStepAIC[-1,][order(ExploredMStepAIC[-1,]$Frequency, decreasing=TRUE),] )
 	ExploredMStepBIC<- rbind(ExploredMStepBIC[1,],  ExploredMStepBIC[-1,][order(ExploredMStepBIC[-1,]$Frequency, decreasing=TRUE),] )
+	}
 	
 	PercentagesOurMethod_womack<-ExploredMOurMethod_womack$Frequency
 	PercentagesOurMethod_bb<-ExploredMOurMethod_bb$Frequency
 	PercentagesLA<-ExploredMLA$Frequency
+	if(StepFit==TRUE)
+	{
 	PercentagesStepAIC<-ExploredMStepAIC$Frequency
 	PercentagesStepBIC<-ExploredMStepBIC$Frequency
+	}
 	
 
 	## Changing frequency values to percentages in text, for latex
@@ -222,6 +234,8 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	for(i in 1:nrow(ExploredMLA)){ aux_EM2[i]<-paste0(ExploredMLA$Frequency[i], "%") }
 	ExploredMLA$Frequency<-aux_EM2
 
+	if(StepFit==TRUE)
+	{
 	aux_EM2<-vector(length=nrow(ExploredMStepAIC))
 	for(i in 1:nrow(ExploredMStepAIC)){ aux_EM2[i]<-paste0(ExploredMStepAIC$Frequency[i], "%") }
 	ExploredMStepAIC$Frequency<-aux_EM2
@@ -229,6 +243,7 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	aux_EM2<-vector(length=nrow(ExploredMStepBIC))
 	for(i in 1:nrow(ExploredMStepBIC)){ aux_EM2[i]<-paste0(ExploredMStepBIC$Frequency[i], "%") }
 	ExploredMStepBIC$Frequency<-aux_EM2
+	}
 
 
 	## Adding the column where will go the "True model" text, for latex
@@ -241,19 +256,38 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	aux_EM<-c( "True Model", rep(" ", nrow(ExploredMLA) -1))
 	ExploredMLA<- head( cbind(" "=aux_EM, ExploredMLA), 4 )
 	
+	if(StepFit==TRUE)
+	{
 	aux_EM<-c( "True Model", rep(" ", nrow(ExploredMStepAIC) -1))
 	ExploredMStepAIC<- head( cbind(" "=aux_EM, ExploredMStepAIC), 4 )
 	
 	aux_EM<-c( "True Model", rep(" ", nrow(ExploredMStepBIC) -1))
 	ExploredMStepBIC<-head( cbind(" "=aux_EM, ExploredMStepBIC), 4 )
+	}
 	
 
 	## Latex All in one table
+	if(StepFit==TRUE)
+	{
+
 	if(Regression=="LiR" || Regression=="LoR" || Regression=="QR")
 	{
 		ExploredModel<-list(Our_Method_womack=ExploredMOurMethod_womack, Our_Method_bb=ExploredMOurMethod_bb, LA=ExploredMLA, Step_AIC=ExploredMStepAIC, Step_BIC=ExploredMStepBIC)
 	}else{
 		ExploredModel<-list(Our_Method_womack=ExploredMOurMethod_womack, Our_Method_bb=ExploredMOurMethod_bb, Step_AIC=ExploredMStepAIC, Step_BIC=ExploredMStepBIC)
+	}
+
+	}
+	if(StepFit==FALSE)
+	{
+
+	if(Regression=="LiR" || Regression=="LoR" || Regression=="QR")
+	{
+		ExploredModel<-list(Our_Method_womack=ExploredMOurMethod_womack, Our_Method_bb=ExploredMOurMethod_bb, LA=ExploredMLA)
+	}else{
+		ExploredModel<-list(Our_Method_womack=ExploredMOurMethod_womack, Our_Method_bb=ExploredMOurMethod_bb)
+	}
+
 	}
 	
 	
@@ -263,15 +297,22 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	maxOurMethod_womack<-max(PercentagesOurMethod_womack)
 	maxOurMethod_bb<-max(PercentagesOurMethod_bb)
 	maxLA<-max(PercentagesLA)
+
+	if(StepFit==TRUE)
+	{
 	maxStepAIC<-max(PercentagesStepAIC)
 	maxStepBIC<-max(PercentagesStepBIC)
+	}
 	
 	flag_OurMethod<-0; flag_OurMethod_bb<-0; flag_LA<-0; flag_StepAIC<-0; flag_StepBIC<-0
 	if(length(which(maxOurMethod_womack==PercentagesOurMethod_womack))==1){flag_OurMethod_womack<-1}
 	if(length(which(maxOurMethod_bb==PercentagesOurMethod_bb))==1){flag_OurMethod_bb<-1}
 	if(length(which(maxLA==PercentagesLA))==1){flag_LA<-1}
+	if(StepFit==TRUE)
+	{
 	if(length(which(maxStepAIC==PercentagesStepAIC))==1){flag_StepAIC<-1}
 	if(length(which(maxStepBIC==PercentagesStepBIC))==1){flag_StepBIC<-1}
+	}
 	
 	## Estimates
 	EstimatesOurMethod_womack<-aux$OurMethod_Posterior_Summary_womack[,c(1,3)]
@@ -285,15 +326,22 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	EstimatesLA<-aux$LA_Posterior_Summary[,c(1,3)] 
 	if(flag_LA==0){EstimatesLA$mean<-rep("- - -", rep_blank); EstimatesLA$sd<-rep("- - -", rep_blank)}
 	
+	if(StepFit==TRUE)
+	{
+
 	if(Regression=="QR"){EstimatesStepAIC<-rbind(sigma2=c(NaN,NaN),aux$StepAIC_Summary[,c(1,3)])}else{
 	EstimatesStepAIC<-aux$StepAIC_Summary[,c(1,3)]
 	}
+	if(StepVcov==FALSE){EstimatesStepAIC$sd<-rep("- - -", rep_blank)}
 	if(flag_StepAIC==0){EstimatesStepAIC$mean<-rep("- - -", rep_blank); EstimatesStepAIC$sd<-rep("- - -", rep_blank)}
 	 
 	if(Regression=="QR"){EstimatesStepBIC<-rbind(sigma2=c(NaN,NaN),aux$StepBIC_Summary[,c(1,3)])}else{
 	EstimatesStepBIC<-aux$StepBIC_Summary[,c(1,3)] 
 	}
+	if(StepVcov==FALSE){EstimatesStepBIC$sd<-rep("- - -", rep_blank)}
 	if(flag_StepBIC==0){EstimatesStepBIC$mean<-rep("- - -", rep_blank); EstimatesStepBIC$sd<-rep("- - -", rep_blank)}
+
+	}
 	
 	aux_names<-vector(length=r_p-1)
 	for(i in 0:(r_p -1)){ aux_names[i+1]<-paste0("beta_{",i,"}") }
@@ -302,6 +350,10 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 	if(Regression=="NBR"){parameters<-c(r_r, r_beta); row_names<-c("r", aux_names)}
 	if(Regression=="QR"){parameters<-c(r_sigma2, r_beta); row_names<-c("sigma2", aux_names)}
 	if(Regression=="SNR"){parameters<-c(r_lambda, r_sigma2, r_beta); row_names<-c("lambda", "sigma2", aux_names)}
+
+	if(StepFit==TRUE)
+	{
+
 	if(Regression=="LiR" || Regression=="LoR")
 	{
 		Estimates<-data.frame(parameters, EstimatesOurMethod_womack, EstimatesOurMethod_bb, EstimatesLA, EstimatesStepAIC, EstimatesStepBIC)
@@ -312,10 +364,29 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE)
 		rownames(Estimates)<-row_names
 		colnames(Estimates)[-1]<-c("mean_OurMethod_womack", "sd_OurMethod_womack", "mean_OurMethod_bb", "sd_OurMethod_bb", "mean_StepAIC", "sd_StepAIC" ,"mean_StepBIC", "sd_StepBIC")
 	}
+
+	}
+	if(StepFit==FALSE)
+	{
+
+	if(Regression=="LiR" || Regression=="LoR")
+	{
+		Estimates<-data.frame(parameters, EstimatesOurMethod_womack, EstimatesOurMethod_bb, EstimatesLA)
+		rownames(Estimates)<-row_names
+		colnames(Estimates)[-1]<-c("mean_OurMethod_womack", "sd_OurMethod_womack", "mean_OurMethod_bb", "sd_OurMethod_bb", "mean_LA", "sd_LA")
+	}else{
+		Estimates<-data.frame(parameters, EstimatesOurMethod_womack, EstimatesOurMethod_bb)
+		rownames(Estimates)<-row_names
+		colnames(Estimates)[-1]<-c("mean_OurMethod_womack", "sd_OurMethod_womack", "mean_OurMethod_bb", "sd_OurMethod_bb")
+	}
+
+	}
+
 	if(ExploredModels==TRUE){OutPut<-list(ExploredModel=ExploredModel, Estimates=Estimates)}else{
 	OutPut<-list(Estimates=Estimates)}
 	OutPut
 }
+
 
 
 ## Simulating from a Logistic regression
@@ -406,7 +477,7 @@ DupBaseBinomial<-function(base)
 	
 
 
-General_Sim_OurMethod<-function(N, r_beta, R, nchain=1000, burnin=0, Regression="LiR", ConfussionPlot=FALSE, ...)
+General_Sim_OurMethod<-function(N, r_beta, R, nchain=1000, burnin=0, Regression="LiR", ConfussionPlot=FALSE, StepFit=TRUE, StepVcov=TRUE, ...)
 {
 t0<-proc.time()
 	first_excluded=0
@@ -835,6 +906,8 @@ t0<-proc.time()
 		}
 
 
+		if(StepFit==TRUE)
+		{
 
 		######################################
 		## 	 	 StepAIC glm 		##
@@ -929,9 +1002,12 @@ t0<-proc.time()
 		if(Regression=="SNR")
 		{
 			glmStepAIC_lambdaEstVector[k]<-as.vector(coefficients(fit_AIC, "DP"))[length(aux_betaIndex_1) +2]
-			glmStepAIC_lambdaSdVector[k]<-sqrt( vcov(fit_AIC, "DP")[length(aux_betaIndex_1) +2, length(aux_betaIndex_1)+2] )
 			glmStepAIC_sigma2EstVector[k]<-as.vector(coefficients(fit_AIC, "DP"))[length(aux_betaIndex_1) +1]
+			if(StepVcov==TRUE)
+			{
+			glmStepAIC_lambdaSdVector[k]<-sqrt( vcov(fit_AIC, "DP")[length(aux_betaIndex_1) +2, length(aux_betaIndex_1)+2] )
 			glmStepAIC_sigma2SdVector[k]<-sqrt( vcov(fit_AIC, "DP")[length(aux_betaIndex_1) +1, length(aux_betaIndex_1)+1] )
+			}
 		}
 		if(Regression=="LiR")
 		{
@@ -958,7 +1034,10 @@ t0<-proc.time()
 		if(Regression=="SNR")
 		{
 			aux_SdGlmStepAIC<-rep(0,p)
+			if(StepVcov==TRUE)
+			{
 			aux_SdGlmStepAIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_AIC, "DP")))[1:length(aux_betaIndex_1)]
+			}
 			glmStepAICSdMatrix[k,]<-aux_SdGlmStepAIC
 		}
 
@@ -1055,9 +1134,12 @@ t0<-proc.time()
 		if(Regression=="SNR")
 		{
 			glmStepBIC_lambdaEstVector[k]<-as.vector(coefficients(fit_BIC, "DP"))[length(aux_betaIndex_1) +2]
-			glmStepBIC_lambdaSdVector[k]<-sqrt( vcov(fit_BIC, "DP")[length(aux_betaIndex_1) +2, length(aux_betaIndex_1)+2] )
 			glmStepBIC_sigma2EstVector[k]<-as.vector(coefficients(fit_BIC, "DP"))[length(aux_betaIndex_1) +1]
+			if(StepVcov==TRUE)
+			{
+			glmStepBIC_lambdaSdVector[k]<-sqrt( vcov(fit_BIC, "DP")[length(aux_betaIndex_1) +2, length(aux_betaIndex_1)+2] )
 			glmStepBIC_sigma2SdVector[k]<-sqrt( vcov(fit_BIC, "DP")[length(aux_betaIndex_1) +1, length(aux_betaIndex_1)+1] )
+			}
 		}
 		if(Regression=="LiR")
 		{
@@ -1084,8 +1166,13 @@ t0<-proc.time()
 		if(Regression=="SNR")
 		{
 			aux_SdGlmStepBIC<-rep(0,p)
+			if(StepVcov==TRUE)
+			{
 			aux_SdGlmStepBIC[aux_betaIndex_1]<-sqrt(diag(vcov(fit_BIC, "DP")))[1:length(aux_betaIndex_1)]
+			}
 			glmStepBICSdMatrix[k,]<-aux_SdGlmStepBIC
+		}
+
 		}
 
 		#glmStepBICModelChain[k]<-ModelSelectedStepBIC				#Actualizando la matriz que cuenta el modelo elegido en cada r�plica
@@ -1138,6 +1225,9 @@ t0<-proc.time()
 	SelectedModelCountLA_summary<-data.frame(SelectedModel=SelectedModelLAFormula, Count=length(IndexReplicaMostSelectedLA), time=time_LA)
 
 
+	if(StepFit==TRUE)
+	{
+
 	## For stepAIC glm method	
 	MostSelectedModelStepAIC<-as.numeric(which(SelectedModelsCountsStepAIC_rbind[,p] ==max(SelectedModelsCountsStepAIC_rbind[,p])) )
 	if( length(MostSelectedModelStepAIC)>1 ){MostSelectedModelStepAIC<-MostSelectedModelStepAIC[1]}
@@ -1162,6 +1252,8 @@ t0<-proc.time()
 	SelectedModelStepBICFormula<-paste0(SelectedModelStepBICNames, collapse = "+")
 	SelectedModelCountStepBIC_summary<-data.frame(SelectedModel=SelectedModelStepBICFormula, Count=length(IndexReplicaMostSelectedStepBIC), time=time_StepBIC)
 
+	}
+
 
 
 	## Agregando "r" de la regresi�n NegBinomial
@@ -1175,6 +1267,8 @@ t0<-proc.time()
 		median_posterior_mean_bb<-c(median(r_bb_mean_vector[IndexReplicaMostSelectedOurMethod_bb]), median_posterior_mean_bb)
 		sd_posterior_mean_bb<-c(mean(r_bb_sd_vector[IndexReplicaMostSelectedOurMethod_bb]), sd_posterior_mean_bb)
 
+		if(StepFit==TRUE)
+		{
 		glmStepAIC_mean<-c(mean(glmStepAIC_rEstVector),glmStepAIC_mean)
 		glmStepAIC_median<-c(median(glmStepAIC_rEstVector),glmStepAIC_median)
 		glmStepAIC_sd_iter<-c(mean(glmStepAIC_rSdVector),glmStepAIC_sd_iter)
@@ -1182,6 +1276,7 @@ t0<-proc.time()
 		glmStepBIC_mean<-c(mean(glmStepBIC_rEstVector),glmStepBIC_mean)
 		glmStepBIC_median<-c(median(glmStepBIC_rEstVector),glmStepBIC_median)
 		glmStepBIC_sd_iter<-c(mean(glmStepBIC_rSdVector),glmStepBIC_sd_iter)
+		}
 	}
 
 	## Agregando summary de lambda,sigma2 de la regresion SkewNormal
@@ -1195,6 +1290,8 @@ t0<-proc.time()
 		median_posterior_mean_bb<-c(median(lambda_bb_mean_vector[IndexReplicaMostSelectedOurMethod_bb]), median(sigma2_bb_mean_vector[IndexReplicaMostSelectedOurMethod_bb]), median_posterior_mean_bb)
 		sd_posterior_mean_bb<-c(mean(lambda_bb_sd_vector[IndexReplicaMostSelectedOurMethod_bb]), mean(sigma2_bb_sd_vector[IndexReplicaMostSelectedOurMethod_bb]), sd_posterior_mean_bb)
 		
+		if(StepFit==TRUE)
+		{
 		glmStepAIC_mean<-c(mean(glmStepAIC_lambdaEstVector), mean(glmStepAIC_sigma2EstVector), glmStepAIC_mean)
 		glmStepAIC_median<-c(median(glmStepAIC_lambdaEstVector), median(glmStepAIC_sigma2EstVector), glmStepAIC_median)
 		glmStepAIC_sd_iter<-c(mean(glmStepAIC_lambdaSdVector), mean(glmStepAIC_sigma2SdVector), glmStepAIC_sd_iter)
@@ -1202,6 +1299,7 @@ t0<-proc.time()
 		glmStepBIC_mean<-c(mean(glmStepBIC_lambdaEstVector), mean(glmStepBIC_sigma2EstVector), glmStepBIC_mean)
 		glmStepBIC_median<-c(median(glmStepBIC_lambdaEstVector), median(glmStepBIC_sigma2EstVector), glmStepBIC_median)
 		glmStepBIC_sd_iter<-c(mean(glmStepBIC_lambdaSdVector), mean(glmStepBIC_sigma2SdVector), glmStepBIC_sd_iter)
+		}
 
 	}
 
@@ -1221,7 +1319,9 @@ t0<-proc.time()
 			mean_CoefsMeanLA<-c(mean(Sigma2MeanLA_vector[IndexReplicaMostSelectedOurMethod]), mean_CoefsMeanLA)
 			median_CoefsMeanLA<-c(median(Sigma2MeanLA_vector[IndexReplicaMostSelectedOurMethod]), median_CoefsMeanLA)
 			sd_CoefsMeanLA<-c(sd(Sigma2MeanLA_vector[IndexReplicaMostSelectedOurMethod]), sd_CoefsMeanLA)
-
+		
+			if(StepFit==TRUE)
+			{
 			glmStepAIC_mean<-c(mean(glmStepAIC_sigma2EstVector), glmStepAIC_mean)
 			glmStepAIC_median<-c(median(glmStepAIC_sigma2EstVector), glmStepAIC_median)
 			glmStepAIC_sd_iter<-c(mean(glmStepAIC_sigma2SdVector), glmStepAIC_sd_iter)
@@ -1229,6 +1329,7 @@ t0<-proc.time()
 			glmStepBIC_mean<-c(mean(glmStepBIC_sigma2EstVector), glmStepBIC_mean)
 			glmStepBIC_median<-c(median(glmStepBIC_sigma2EstVector), glmStepBIC_median)
 			glmStepBIC_sd_iter<-c(mean(glmStepBIC_sigma2SdVector), glmStepBIC_sd_iter)
+			}
 
 		}
 	}
@@ -1241,13 +1342,20 @@ t0<-proc.time()
 	OurMethodResult<-data.frame(mean=mean_posterior_mean, median=median_posterior_mean, sd=sd_posterior_mean)		#data.frame with mean, median and sd of our method, Womack prior		
 	OurMethodResult_bb<-data.frame(mean=mean_posterior_mean_bb, median=median_posterior_mean_bb, sd=sd_posterior_mean_bb)		#same as before, but with Beta-Binomial prior
 	LAResult<-data.frame(mean=mean_CoefsMeanLA, median=median_CoefsMeanLA, sd=sd_CoefsMeanLA)
+	if(StepFit==TRUE)
+	{
 	StepAICMethodResult<-data.frame(mean=glmStepAIC_mean, median=glmStepAIC_median, sd=glmStepAIC_sd_iter)
 	StepBICMethodResult<-data.frame(mean=glmStepBIC_mean, median=glmStepBIC_median, sd=glmStepBIC_sd_iter)
+	}
 	rownames(OurMethodResult)<-CoefNames			#Naming the covariates names on the output result (X1,X2,...)
 	rownames(OurMethodResult_bb)<-CoefNames			
 	if(Regression=="LiR" || Regression=="LoR"){rownames(LAResult)<-CoefNames}
+
+	if(StepFit==TRUE)
+	{
 	if(Regression=="QR"){rownames(StepAICMethodResult)<-CoefNames[-1]; rownames(StepBICMethodResult)<-CoefNames[-1]}else{
 					rownames(StepAICMethodResult)<-CoefNames; rownames(StepBICMethodResult)<-CoefNames}
+	}
 
 
 	if(ConfussionPlot==TRUE)
@@ -1269,7 +1377,9 @@ t0<-proc.time()
 	AllModelsCountsOurMethod=AllModelsCountsOurMethod_rbind, AllModelsCountsLA=AllModelsCountsLA_rbind, 
 	AllModelsCountsStepAIC=AllModelsCountsStepAIC_rbind, AllModelsCountsStepBIC=AllModelsCountsStepBIC_rbind,
 	"Time_Minutes"=(t1 -t0)[3]/60)
-	}else{
+	}
+	if(StepFit==TRUE)
+	{
 	aux<-list(DataList=DataList, coefs_PostMean_matrix_OurMethod=CoefsMeanOurMethod_matrix,	
 	True_Model= TruePredFormula, "Selected_Model_Count_OurMethod_womack"=SelectedModelCountOurMethod_summary,
 	"Selected_Model_Count_OurMethod_bb"=SelectedModelCountOurMethod_bb_summary, 
@@ -1284,6 +1394,20 @@ t0<-proc.time()
 	"OurMethod_Posterior_Summary_womack"=OurMethodResult, "OurMethod_Posterior_Summary_bb"=OurMethodResult_bb,
 	"LA_Posterior_Summary"=LAResult,
 	"StepAIC_Summary"=StepAICMethodResult, "StepBIC_Summary"=StepBICMethodResult, Regression=Regression,
+	"Time_Minutes"=(t1 -t0)[3]/60)
+	}
+	if(StepFit==FALSE)
+	{
+	aux<-list(DataList=DataList, coefs_PostMean_matrix_OurMethod=CoefsMeanOurMethod_matrix,	
+	True_Model= TruePredFormula, "Selected_Model_Count_OurMethod_womack"=SelectedModelCountOurMethod_summary,
+	"Selected_Model_Count_OurMethod_bb"=SelectedModelCountOurMethod_bb_summary, 
+	"Selected_Model_Count_LA"=SelectedModelCountLA_summary,
+	Model_Exploration_OurMethod_womack=SelectedModelsCountsOurMethod_rbind, 
+	Model_Exploration_OurMethod_bb=SelectedModelsCountsOurMethod_bb_rbind,
+	Model_Exploration_LA=SelectedModelsCountsLA_rbind,
+	"OurMethod_Posterior_Summary_womack"=OurMethodResult, "OurMethod_Posterior_Summary_bb"=OurMethodResult_bb,
+	"LA_Posterior_Summary"=LAResult,
+	Regression=Regression,
 	"Time_Minutes"=(t1 -t0)[3]/60)
 	}
 
@@ -1510,9 +1634,9 @@ for(j in 1:length(alphaVector))
 	set.seed(31415)
 	r_alpha<-alphaVector[j]
 	DataIter<-j
-	if(r_alpha==0.1){aux_0.1<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, DataIter)}
-	if(r_alpha==0.5){aux_0.5<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, DataIter)}
-	if(r_alpha==0.9){aux_0.9<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, DataIter)}
+	if(r_alpha==0.1){aux_0.1<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)}
+	if(r_alpha==0.5){aux_0.5<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)}
+	if(r_alpha==0.9){aux_0.9<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)}
 }
 Summary_SimStudy(aux_0.1, ExploredModels=TRUE)	#Summary results
 Summary_SimStudy(aux_0.5, ExploredModels=TRUE)	#Summary results
@@ -1540,8 +1664,8 @@ set.seed(31415)
 N<-500
 r_beta<-c(sample(c(1,-1), size=30, replace=TRUE), rep(0,20))
 r_p<-length(r_beta)
-aux<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)
-Summary_SimStudy(aux, ExploredModels=TRUE)	#Summary results
+aux<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, StepVcov=FALSE)
+Summary_SimStudy(aux, ExploredModels=TRUE, StepVcov=FALSE)	#Summary results
 
 
 ## Scenario 3 (Supplementary material, for Table 8)
@@ -1549,6 +1673,6 @@ set.seed(31415)
 N<-500
 r_beta<-c(sample(c(1,-1), size=70, replace=TRUE), rep(0,30))
 r_p<-length(r_beta)
-aux<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)
-Summary_SimStudy(aux, ExploredModels=TRUE)	#Summary results
+aux<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, StepFit=FALSE)
+Summary_SimStudy(aux, ExploredModels=TRUE, StepFit=FALSE)	#Summary results
 

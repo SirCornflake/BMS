@@ -4,13 +4,7 @@
 #install.packages("truncnorm") 	#Truncated Normal simulation
 ##########################################################################
 
-print.BMS <- function(m){
-    print(m$Default)
-}
 
-
-
-## Womack prior
 womack = function(K, rho)
 {
   if(length(rho)!=1){stop(paste("'rho' must be a vector of size 1")) }
@@ -28,7 +22,8 @@ womack = function(K, rho)
   }
   base::exp( out + base::lbeta(c(0:K) + 1, K - c(0:K) + 1 ) + base::log(K+1) )
 }
-## Simulate from the Chinise restaurant distribution
+
+
 rCRT<-function(n,b,c)
 {
   if((round(n)!=n) || n<=0 || length(n) > 1){ stop(paste("'n' must be a positive integer")) }
@@ -50,25 +45,29 @@ rCRT<-function(n,b,c)
 }
 
 
-## Gibbs Sampler for Bayesian variable selection models via a spike-and-slab methodology.
 gibbs_abms<-function(y, Covariates, family="LiR", first_excluded=0, nchain=10000, burnin=2000, tau2=1000, rho=1, ni=rep(1, length(y)), alpha=0.5,
                      a0=1, b0=1, d=2, b2=1/2, model_fixed=NULL, WomackPrior=TRUE, a_bb=1, b_bb=1, count.iteration=TRUE )
 {
-  if((class(y)!="numeric" && class(y)!="integer")  || is.vector(y)==FALSE){stop(paste("'y' must be a numeric or integer vector")) }
-  if(class(Covariates)[1]!="data.frame" && (is.matrix(Covariates)==FALSE)){stop(paste("'Covariates' must be a data.frame or a matrix")) }
+  print.abms <- function(m){
+    print(m$Default)
+  }
+
+  if(( !inherits(y,"numeric") && !inherits(y,"integer") )  || is.vector(y)==FALSE){stop(paste("'y' must be a numeric or integer vector")) }
+  if(!inherits(Covariates, "data.frame") && !inherits(Covariates, "matrix")){stop(paste("'Covariates' must be a data.frame or a matrix")) }
   if(length(first_excluded)>1 || first_excluded<0){stop(paste("'first_excluded' must be a non-negative integer")) }
   if(length(nchain)>1 || nchain<=0){stop(paste("'nchain' must be a positive integer")) }
   if(burnin<0 || burnin>nchain){stop(paste("'burnin' must be a non-negative integer that equal less than nchain ")) }
   if(tau2<=0){stop(paste("'tau2' must be a positive integer")) }
   if(tau2<=10) warning("It is recomended for 'tau2' equal at least 1000.")
   if(rho<=0){stop(paste("'rho' must be a positive integer")) }
-  if(is.null(model_fixed)==FALSE && is.vector(model_fixed)==FALSE){ stop(paste("'model_fixed' must be a vector of size 'p-1' at most")) }
-  if(is.vector(model_fixed)==TRUE && length(model_fixed)>(ncol(Covariates)) ){ stop(paste("'model_fixed' must be a vector of size 'p-1' at most")) }
+  if(!inherits(model_fixed,"NULL") && !inherits(model_fixed,"numeric")){ stop(paste("'model_fixed' must be NULL or a vector of size 'p-1' at most")) }
+  if(inherits(model_fixed,"numeric") && length(model_fixed)>(ncol(Covariates)) ){ stop(paste("'model_fixed' must be a vector of size 'p-1' at most")) }
+  if(WomackPrior!=TRUE && WomackPrior!=FALSE){stop(paste("'WomackPrior' must be either TRUE or FALSE")) }
   if(count.iteration!=TRUE && count.iteration!=FALSE){stop(paste("'count.iteration' must be either TRUE or FALSE")) }
 
   if(a0<=0){stop(paste("'a0' must be a positive real number")) }
   if(b0<=0){stop(paste("'b0' must be a positive real number")) }
-  if(length(ni)!=length(y) || any(ni<0)){stop(paste("'ni' must be a positive integer vector with same size as 'y'")) }
+  if(inherits(family,"LoR") && (length(ni)!=length(y) || any(ni<0)) ){stop(paste("'ni' must be a positive integer vector with same size as 'y'")) }
   if(alpha>1 || alpha<0){stop(paste("'alpha' must be between 0 and 1")) }
   if(d<=0){stop(paste("'d' must be a positive real number")) }
   if(b2<=0){stop(paste("'b2' must be a positive real number")) }
@@ -78,12 +77,12 @@ gibbs_abms<-function(y, Covariates, family="LiR", first_excluded=0, nchain=10000
   ## Beta-Binomial pior2 PDF
   BetaBinomialPrior<-function(p, a, b)
   {
-  	aux<-vector(length=p+1)
-	for(i in 0:p)
-	{
-		aux[i+1]<-beta(a=a +i, b=p +b -i)/beta(a=a,b=b)
-	}
-	return(aux)
+    aux<-vector(length=p+1)
+    for(i in 0:p)
+    {
+      aux[i+1]<-beta(a=a +i, b=p +b -i)/beta(a=a,b=b)
+    }
+    return(aux)
   }
 
 
@@ -172,8 +171,8 @@ gibbs_abms<-function(y, Covariates, family="LiR", first_excluded=0, nchain=10000
   log_tau2<-base::log(tau2)
   frac_tau2<-1/tau2
   if(WomackPrior==TRUE){ log_gamma_prior<-base::log(womack(p_selection,rho)) }else{
-  			    log_gamma_prior<-log( BetaBinomialPrior(p=p_selection, a=a_bb, b=b_bb) )
-			  }
+    log_gamma_prior<-log( BetaBinomialPrior(p=p_selection, a=a_bb, b=b_bb) )
+  }
 
   InvDiag_tau2_general<-diag(frac_tau2, p)
   Omega_modified_general<-matrix(base::rep(t.chain[1,],each = p), nrow = p, ncol = N, byrow = F)
@@ -199,52 +198,52 @@ gibbs_abms<-function(y, Covariates, family="LiR", first_excluded=0, nchain=10000
     if(count.iteration==TRUE){cat("  Iteracion", i, "de", nchain, "\r")}
 
     if(is.null(model_fixed)==TRUE)
-	{
-		
-    		## Add-delete algorithm
-    		aux_gamma<-sample(1:p_selection, size=1)
-    		gammaCandidate<-gammaOld
-    		gammaCandidate[aux_gamma]<-1 -gammaOld[aux_gamma]
+    {
 
-    		for(k in 1:2)
-    		{
-      		if(k==1){gamma_aux<-gammaOld}else{gamma_aux<-gammaCandidate}
-      		q_aux<-base::sum(gamma_aux)
-      		X_index_aux[[k]]<-unique(c(X_index_aux_excluded, intercept_first_excluded +which(gamma_aux==1)))
-      		X_gamma_aux[[k]]<-X[,X_index_aux[[k]]]
-      		tXgamma_Omega_aux[[k]]<- tXgamma_Omega_general[X_index_aux[[k]],]
-      		tXgamma_Omega_aux_Z<- tXgamma_Omega_Z_general[X_index_aux[[k]]]
-      		InvDiag_tau2_aux<-InvDiag_tau2_general[1:(intercept_first_excluded +q_aux), 1:(intercept_first_excluded +q_aux)]
-      		chol_V_aux[[k]]<- chol(NotInverse_V_general[X_index_aux[[k]], X_index_aux[[k]]])
-      		V_aux[[k]]<- chol2inv(chol_V_aux[[k]])
-      		det_V_aux<-1/prod(diag(chol_V_aux[[k]]))^(2)
-      		if(det_V_aux<1e-10){det_V_aux<-1e-10}
-      		m_aux[[k]]<-V_aux[[k]]%*%tXgamma_Omega_aux_Z
-      		DAlog_weight_model[k]<-as.vector( (-q_aux/2)*log_tau2 +(0.5)*base::log(det_V_aux) +
-                                          (0.5)*t(m_aux[[k]])%*%tXgamma_Omega_aux_Z +log_gamma_prior[q_aux +1] )
-    		}
-    		A<- DAlog_weight_model -base::max(DAlog_weight_model)
-    		b<-exp(A)
-    		DAgamma_prob<-b/base::sum(b)
+      ## Add-delete algorithm
+      aux_gamma<-sample(1:p_selection, size=1)
+      gammaCandidate<-gammaOld
+      gammaCandidate[aux_gamma]<-1 -gammaOld[aux_gamma]
 
-    		p_gammaOld<-DAgamma_prob[1]
-    		p_gammaCandidate<-DAgamma_prob[2]
-    		p_selectionCandidate<-min(p_gammaCandidate/p_gammaOld,1)
-    		selection<-sample(c("Candidate","Old"), size=1, prob=c(p_selectionCandidate, 1-p_selectionCandidate))
-    		if(selection=="Candidate"){gamma<-gammaCandidate; k<-2}else{gamma<-gammaOld; k<-1}
-    		q<-base::sum(gamma)
-	}else{
-		gamma<-rep(0, p-1)
-		gamma[model_fixed]<-1
-		k<-1
-		X_index_aux[[k]]<-unique(c(X_index_aux_excluded, intercept_first_excluded +which(gamma==1)))
-      	X_gamma_aux[[k]]<-X[,X_index_aux[[k]]]
-		tXgamma_Omega_aux[[k]]<- tXgamma_Omega_general[X_index_aux[[k]],]
-      	tXgamma_Omega_aux_Z<- tXgamma_Omega_Z_general[X_index_aux[[k]]]
-      	chol_V_aux[[k]]<- chol(NotInverse_V_general[X_index_aux[[k]], X_index_aux[[k]]])
-      	V_aux[[k]]<- chol2inv(chol_V_aux[[k]])
-		m_aux[[k]]<-V_aux[[k]]%*%tXgamma_Omega_aux_Z			
-	}
+      for(k in 1:2)
+      {
+        if(k==1){gamma_aux<-gammaOld}else{gamma_aux<-gammaCandidate}
+        q_aux<-base::sum(gamma_aux)
+        X_index_aux[[k]]<-unique(c(X_index_aux_excluded, intercept_first_excluded +which(gamma_aux==1)))
+        X_gamma_aux[[k]]<-X[,X_index_aux[[k]]]
+        tXgamma_Omega_aux[[k]]<- tXgamma_Omega_general[X_index_aux[[k]],]
+        tXgamma_Omega_aux_Z<- tXgamma_Omega_Z_general[X_index_aux[[k]]]
+        InvDiag_tau2_aux<-InvDiag_tau2_general[1:(intercept_first_excluded +q_aux), 1:(intercept_first_excluded +q_aux)]
+        chol_V_aux[[k]]<- chol(NotInverse_V_general[X_index_aux[[k]], X_index_aux[[k]]])
+        V_aux[[k]]<- chol2inv(chol_V_aux[[k]])
+        det_V_aux<-1/prod(diag(chol_V_aux[[k]]))^(2)
+        if(det_V_aux<1e-10){det_V_aux<-1e-10}
+        m_aux[[k]]<-V_aux[[k]]%*%tXgamma_Omega_aux_Z
+        DAlog_weight_model[k]<-as.vector( (-q_aux/2)*log_tau2 +(0.5)*base::log(det_V_aux) +
+                                            (0.5)*t(m_aux[[k]])%*%tXgamma_Omega_aux_Z +log_gamma_prior[q_aux +1] )
+      }
+      A<- DAlog_weight_model -base::max(DAlog_weight_model)
+      b<-exp(A)
+      DAgamma_prob<-b/base::sum(b)
+
+      p_gammaOld<-DAgamma_prob[1]
+      p_gammaCandidate<-DAgamma_prob[2]
+      p_selectionCandidate<-min(p_gammaCandidate/p_gammaOld,1)
+      selection<-sample(c("Candidate","Old"), size=1, prob=c(p_selectionCandidate, 1-p_selectionCandidate))
+      if(selection=="Candidate"){gamma<-gammaCandidate; k<-2}else{gamma<-gammaOld; k<-1}
+      q<-base::sum(gamma)
+    }else{
+      gamma<-rep(0, p-1)
+      gamma[model_fixed]<-1
+      k<-1
+      X_index_aux[[k]]<-unique(c(X_index_aux_excluded, intercept_first_excluded +which(gamma==1)))
+      X_gamma_aux[[k]]<-X[,X_index_aux[[k]]]
+      tXgamma_Omega_aux[[k]]<- tXgamma_Omega_general[X_index_aux[[k]],]
+      tXgamma_Omega_aux_Z<- tXgamma_Omega_Z_general[X_index_aux[[k]]]
+      chol_V_aux[[k]]<- chol(NotInverse_V_general[X_index_aux[[k]], X_index_aux[[k]]])
+      V_aux[[k]]<- chol2inv(chol_V_aux[[k]])
+      m_aux[[k]]<-V_aux[[k]]%*%tXgamma_Omega_aux_Z
+    }
 
     ## Updating beta
     beta_index_0<-setdiff(1:p, X_index_aux[[k]])
@@ -410,7 +409,6 @@ gibbs_abms<-function(y, Covariates, family="LiR", first_excluded=0, nchain=10000
 }
 
 
-## Summary table for Gibbs sampler
 summary_gibbs<-function(fit, BF=FALSE)
 {
   if(class(fit)!="abms"){stop(paste("'fit' must be a 'abms' class object")) }
@@ -488,9 +486,7 @@ summary_gibbs<-function(fit, BF=FALSE)
     New_ExploredModels<-ExploredModels
     for(j in 1:nrow(aux_ExploredModels))
     {
-      #Conditional_BF<-mean(exp(loglik[[1]] -loglik[[j]]))
       Marginal_BF<-mean(loglik[[1]]) -mean(loglik[[j]])
-      #New_ExploredModels[j,ncol(ExploredModels) +1]<-Conditional_BF
       New_ExploredModels[j,ncol(ExploredModels) +1]<-Marginal_BF
     }
     colnames(New_ExploredModels)[-(1:ncol(ExploredModels))]<-c("Log_Marginal_BF_Estimator")
@@ -527,254 +523,68 @@ summary_gibbs<-function(fit, BF=FALSE)
   list(Mean_IC=Table, Explored_Models=ExploredModels)
 }
 
-## Function that generates "y" vector and "Covariates" data.frame for LiR
-LiR_base<-function(N, r_beta, r_sigma2)
+
+gen_base_binomial_reg<- function(N, beta, Covariates, ni=rep(1, N))
 {
-	r_beta<-as.matrix(r_beta)
-	p<-length(r_beta)
-	X<-matrix( c(rep(1, N), rnorm((p -1)*N)), ncol=p )
-	Xbeta<-X%*%r_beta
-	y<-rnorm(N, mean=Xbeta, sd=sqrt(r_sigma2))
-	Covariates<-X[,2:(length(r_beta))]
-	aa<-c()
-	for(i in 1:(p-1)){aa<-c(aa, paste0("X",i))}	
-	colnames(Covariates)<-aa
-	list(y=y, Covariates=Covariates)
-}
+  if(N<=0){stop(paste("'N' must be a positive integer")) }
+  if(length(beta)!=(ncol(Covariates) +1)){stop(paste("'beta' must be have same size as 'ncol(Covariates)'")) }
+  if(!inherits(Covariates, "data.frame") && !inherits(Covariates, "matrix")){stop(paste("'Covariates' must be a data.frame or a matrix")) }
 
-## Function that generates "y" vector and "Covariates" data.frame for LoR
-LoR_base<-function(N, r_beta, ni=rep(1, N))
-{
-	gen_base_binomial_reg<- function(beta, Covariates, N, ni)
-	{
-		p<-length(Covariates[1,]) +1; x<-c()
-		for(i in 1:(p -1))
-		{
-				x<-c(x,Covariates[,i])
-		}
-		X<-matrix(c(rep(1,N),x), ncol = p, nrow = N, byrow=FALSE)
-	
-	
-		beta_matrix<-as.matrix(beta)
-		prob<- exp(X%*%beta_matrix)/(1 + exp(X%*%beta_matrix))
-	  
-		y<-vector(length=N)
-		for(i in 1:N)
-		{
-			y[i] <- rbinom(n = 1, size = ni[i], prob = prob[i])
-		}
-	  
-		base <- data.frame(y = y, 
-	                   n_failure = ni - y, 
-	                   ni = ni,  #
-	                   Covariates = Covariates)  
-		colnames(base)[-(1:3)]<-colnames(Covariates)
-		return(base)
-	}
-	mu_cov<-0; sigma_cov<-1
-	p<-length(r_beta)
-	aux_cov<-rnorm((p-1)*N, mu_cov, sigma_cov)
-	Covariates<-data.frame(matrix(aux_cov, ncol=p-1, nrow=N))
-	aa<-c()
-	for(i in 1:(p-1)){aa<-c(aa, paste0("X",i))}	
-	colnames(Covariates)<-aa
-	base<-gen_base_binomial_reg(N=N, beta=r_beta, Covariates=Covariates, ni=ni)
-	y<-base$y; Covariates<-as.matrix(base[,-(1:3)]); 
-	list(y=y, Covariates=Covariates, ni=ni)
-	
-}
 
-## Function that generates "y" vector and "Covariates" data.frame for NBR
-NBR_base<-function(N, r_beta, r_r)
-{
+  if(length(ni)!=N || any(ni<0)){stop(paste("'ni' must be a positive integer vector with same size as 'y'")) }
 
-	gen_base_NegBinomial_reg<- function(N, beta, r, Covariates)
-	{
-		X<-as.matrix(Covariates)
-		X<-cbind(rep(1,N),X)
-		colnames(X)<-NULL
-	
-		beta_matrix<-as.matrix(beta)
-		prob<- 1/(1 + exp(X%*%beta_matrix))
-	  
-		y<-vector(length=N)
-	
-		for(i in 1:N)
-		{
-			y[i]<-rnbinom(1, size=r, prob= prob[i])
-		}
-	
-		base <- data.frame(y = y,
-	                   Covariates = Covariates)  
-		colnames(base)[-1]<-colnames(Covariates)
-		return(base)
-	}
+  p<-length(Covariates[1,]) +1; x<-c()
+  for(i in 1:(p -1))
+  {
+    x<-c(x,Covariates[,i])
+  }
+  X<-matrix(c(rep(1,N),x), ncol = p, nrow = N, byrow=FALSE)
 
-	mu_cov<-0; sigma_cov<-1
-	p<-length(r_beta)
-	aux_cov<-rnorm((p-1)*N, mu_cov, sigma_cov)
-	Covariates<-data.frame(matrix(aux_cov, ncol=p-1, nrow=N))
-	aa<-c()
-	for(i in 1:(p-1)){aa<-c(aa, paste0("X",i))}	
-	colnames(Covariates)<-aa
-	base<-gen_base_NegBinomial_reg(N, r_beta, r_r, Covariates=Covariates)
-	y<-base$y; Covariates<-as.matrix(base[,-1])
-	list(y=y, Covariates=Covariates)
-}
 
-## Function that generates "y" vector and "Covariates" data.frame for QR
-QR_base<-function(N, r_beta, r_sigma2, r_alpha)
-{
-	mu_cov<-0; sigma_cov<-1
-	p<-length(r_beta)
-	aux_cov<-rnorm((p-1)*N, mu_cov, sigma_cov)
-	X<-matrix( c(rep(1, N), aux_cov), ncol=p )
-	Xbeta<-X%*%r_beta
-	
-	y<-vector(length=N)
-	w<-rexp(N, rate=1/r_sigma2)
-	varphi<-(1-2*r_alpha)/(r_alpha*(1-r_alpha))
-	delta2<-2/(r_alpha*(1-r_alpha))
-	y<- Xbeta +varphi*w +sqrt(r_sigma2*delta2*w)*rnorm(N, mean=0, sd=1)	#ALD data
-	y<-as.vector(y)
+  beta_matrix<-as.matrix(beta)
+  prob<- exp(X%*%beta_matrix)/(1 + exp(X%*%beta_matrix))
 
-	Covariates<-X[,2:(length(r_beta))]
-	aa<-c()
-	for(i in 1:(p-1)){aa<-c(aa, paste0("X",i))}	
-	colnames(Covariates)<-aa
-	list(y=y, Covariates=Covariates, r_alpha=r_alpha)
-}
+  y<-vector(length=N)
+  for(i in 1:N)
+  {
+    y[i] <- stats::rbinom(n = 1, size = ni[i], prob = prob[i])
+  }
 
-## Function that generates "y" vector and "Covariates" data.frame for SNR
-SNR_base<-function(N, r_beta, r_sigma2, r_lambda)
-{
-	p<-length(r_beta)
-	r_delta<-r_lambda/sqrt(r_lambda^2 +1)
-	X<-matrix( c(rep(1, N), rnorm((p -1)*N)), ncol=p )
-	Xbeta<-X%*%r_beta
-	r_w<-abs(rnorm(N, mean=0, sd=1))
-	r_delta<-r_lambda/sqrt(r_lambda^2 +1)
-	y<-Xbeta +sqrt(r_sigma2)*r_delta*r_w +sqrt(r_sigma2*(1 -r_delta^2))*rnorm(N, mean=0, sd=1)	#Simulating from Skew Normal
-	y<-as.vector(y)
-	Covariates<-X[,2:(length(r_beta))]
-	aa<-c()
-	for(i in 1:(p-1)){aa<-c(aa, paste0("X",i))}	
-	colnames(Covariates)<-aa
-	list(y=y, Covariates=Covariates)
-
+  base <- data.frame(y = y,
+                     n_failure = ni - y,
+                     ni = ni,  #
+                     Covariates = Covariates)
+  colnames(base)[-(1:3)]<-colnames(Covariates)
+  return(base)
 }
 
 
-## Function for comparing BF Models. Compute the log marginal BF estimator
-#Models is a matrix that need to have two or more models. Function compute the BF between the first models and the others
-BF_model<-function(Models, logBF=FALSE, y, Covariates, family="LoR", 
-first_excluded=0, nchain=10000, burnin=2000, tau2=1000, rho=1, ni=rep(1, length(y)), alpha=0.5,
-a0=1, b0=1, d=2, b2=1/2, count.iteration=TRUE )
+gen_base_NegBinomial_reg<- function(N, beta, r, Covariates)
 {
-	aux_BF<-function(fit, aux_ExploredModels)
-	{
-    		Indexes<-vector(mode="list", length=nrow(aux_ExploredModels))
-    		loglik<-vector(mode="list", length=nrow(aux_ExploredModels))
-    		X_index_aux<-vector(mode="list", length=nrow(aux_ExploredModels))
-    		X_gamma<-vector(mode="list", length=nrow(aux_ExploredModels))
-    		InvDiag_tau2_aux<-vector(mode="list", length=nrow(aux_ExploredModels))
-    		X_index_aux<-vector(mode="list", length=nrow(aux_ExploredModels))
-    		tau2<-fit$tau2
-    		Covariates<-fit$Covariates
-    		p<-ncol(Covariates) +1
-    		first_excluded<-abs(ncol(Covariates) -ncol(aux_ExploredModels))
-    		intercept_first_excluded<- first_excluded +1
-    		p_selection<-p -intercept_first_excluded
+  if(N<=0){stop(paste("'N' must be a positive integer")) }
+  if(length(beta)!=(ncol(Covariates) +1)){stop(paste("'beta' must be have same size as 'ncol(Covariates)'")) }
+  if(r<=0){stop(paste("'r' must be a positive integer")) }
+  if(!inherits(Covariates, "data.frame") && !inherits(Covariates, "matrix")){stop(paste("'Covariates' must be a data.frame or a matrix")) }
 
-    		N<-nrow(Covariates)
-    		X<-as.matrix(cbind(base::rep(1,N), Covariates))
-    		InvDiag_tau2_general<-diag(1/tau2, p)
-    		X_index_aux_excluded<-c(1:intercept_first_excluded)
 
-    		for(j in 1:nrow(aux_ExploredModels))
-    		{
-      		q_aux<-base::sum(aux_ExploredModels[j,])
-      		X_gamma[[j]]<-as.matrix(fit$Covariates[,which(aux_ExploredModels[j,]==1)])
-      		InvDiag_tau2_aux[[j]]<-InvDiag_tau2_general[1:(intercept_first_excluded +q_aux), 1:(intercept_first_excluded +q_aux)]
-      		X_index_aux[[j]]<-unique(c(X_index_aux_excluded, intercept_first_excluded +which(aux_ExploredModels[j,]==1)))
+  X<-as.matrix(Covariates)
+  X<-cbind(rep(1,N),X)
+  colnames(X)<-NULL
 
-    		}
-    		for(i in 1:nrow(fit$beta_chain))
-    		{
-      		Z<-fit$Z_chain[i,]; t_Omega<-fit$t_chain[i,]
-      		Omega_modified_general<-matrix(base::rep(t_Omega,each = p), nrow = p, ncol = N, byrow = F)
-      		tXgamma_Omega_general<-t(X)*Omega_modified_general[1:ncol(X),]
-      		NotInverse_V_general<-tXgamma_Omega_general%*%X + InvDiag_tau2_general
-      		tXgamma_Omega_Z_general<- tXgamma_Omega_general%*%Z
-      		for(j in 1:nrow(aux_ExploredModels))
-      		{
-				tXgamma_Omega_aux_Z<- tXgamma_Omega_Z_general[X_index_aux[[j]]]
-				chol_V_aux<- chol(NotInverse_V_general[X_index_aux[[j]], X_index_aux[[j]]])  #Cholesky of "not inverted" V
-				V_aux<- chol2inv(chol_V_aux)
-				m_aux<-V_aux%*%tXgamma_Omega_aux_Z
-				det_V_aux<-1/prod(diag(chol_V_aux))^(2)
+  beta_matrix<-as.matrix(beta)
+  prob<- 1/(1 + exp(X%*%beta_matrix))
 
-				loglik[[j]][i]<-0.5*log(det_V_aux) +(0.5)*t(m_aux)%*%tXgamma_Omega_aux_Z -0.5*p_selection*log(tau2)
-			}
-		}
+  y<-vector(length=N)
 
-		New_ExploredModels<- data.frame(aux_ExploredModels)
-    		for(j in 1:nrow(aux_ExploredModels))
-    		{
-      		Conditional_BF<-mean(exp(loglik[[1]] -loglik[[j]]))
-      		Marginal_BF<-exp( mean(loglik[[1]]) -mean(loglik[[j]]) )
-      		New_ExploredModels[j,ncol( aux_ExploredModels) +1]<-Conditional_BF
-      		New_ExploredModels[j,ncol( aux_ExploredModels) +2]<-Marginal_BF
-    		}
-    		colnames(New_ExploredModels)[-(1:ncol(aux_ExploredModels))]<-c("Conditional_BF", "Marginal_BF_Estimator")
-    		list(loglik=loglik, ExploredModels=New_ExploredModels)
-  	}
+  for(i in 1:N)
+  {
+    y[i]<-stats::rnbinom(1, size=r, prob= prob[i])
+  }
 
-	## Fitting fixing at model1 and model2
-	fit<-list()
-	for(i in 1:length(Models))
-	{
-		fit[[i]]<-gibbs_abms(y, Covariates, family=family, first_excluded=first_excluded, nchain=nchain, burnin=burnin, tau2=tau2, rho=rho, ni=ni, alpha=alpha,
-		a0=a0, b0=b0, d=d, b2=b2, model_fixed=Models[[i]], count.iteration=TRUE )
-	}
-
-	## Creating aux_ExploredModels table
-	aux_ExploredModels<-rbind()
-	for(i in 1:length(Models))
-	{
-		aux_gamma<-rep(0, p-1)
-		if( all(Models[[i]]==0) ){ }else{ aux_gamma[Models[[i]]]<-1  }
-		aux_ExploredModels<-rbind(aux_ExploredModels, aux_gamma)
-	}
-	aux_gammaName<-c()
-	for(i in 1:length(Models)){aux_gammaName<-c(aux_gammaName, paste0("gamma",i))}
-	rownames(aux_ExploredModels)<-aux_gammaName
-
-	## BF where fit1 and fit2 where first use the (w,psi) of model1 and then the (w,psi) of model2, etc.
-	BF_fit<-list()
-	for(i in 1:length(Models))
-	{
-		BF_fit[[i]]<-aux_BF(fit[[i]], aux_ExploredModels)	#BF using w and psi of fit[[i]]
-	}
-
-	## BF where fit1 and fit2 use their respective (w,psi)
-	loglik<-vector(mode="list", length(Models))
-	for(i in 1:length(Models))
-	{
-		loglik[[i]]<-BF_fit[[i]]$loglik[[i]]	#loglik of Models[[i]] with it (w,psi)
-	}
-
-	log_BF_marginal<- data.frame(aux_ExploredModels)
-    	for(j in 1:nrow(aux_ExploredModels))
-    	{
-      	Marginal_logBF<-mean(loglik[[1]]) -mean(loglik[[j]])
-      	log_BF_marginal[j,ncol( aux_ExploredModels) +1]<-Marginal_logBF
-
-    	}
-    	colnames(log_BF_marginal)[-(1:ncol(aux_ExploredModels))]<-c("log_Marginal_BF_Estimator")
-
-    	list("log_BF_marginal"=log_BF_marginal)
- 
+  base <- data.frame(y = y,
+                     Covariates = Covariates)
+  colnames(base)[-1]<-colnames(Covariates)
+  return(base)
 }
 
 
