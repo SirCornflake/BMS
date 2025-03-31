@@ -159,7 +159,7 @@ QR_PredPlot<-function(base, Latextable)
 		}
 		PredPlot[[predictor_index]]<-gg_object
 	} 
-	ggarrange(PredPlot[[1]], PredPlot[[2]], PredPlot[[3]] )
+	ggarrange(PredPlot[[1]], PredPlot[[2]], PredPlot[[3]], ncol=3 )
 }
 ##################################################################################################################################################
 set.seed(31415)
@@ -216,7 +216,7 @@ for(i in 10:length(r_alpha))
 }
 
 
-save("Application_Ens_Seed31415.Rdata")
+save.image("Application_Ens_Seed31415_2.Rdata")
 
 ########################################################
 ## 		Pas and Pad summary Tables			##
@@ -249,7 +249,5 @@ QR_PredPlot(base_pad, LatexTablePad)
 
 ## Pas, Figure 3, Supplementary material
 QR_PredPlot(base_pas, LatexTablePas)
-
-
 
 
