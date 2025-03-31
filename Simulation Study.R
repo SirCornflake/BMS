@@ -19,7 +19,7 @@ source("function.R")
 ################################################################################
 ##				Some functions, Just run this					##
 ################################################################################
-aux<-aux_n20
+
 ## For confussion matrix plot
 ConfusionMatrix<-function(aux, gamma_matrix)
 {
