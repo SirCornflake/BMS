@@ -1,5 +1,5 @@
 rm(list=ls(all=TRUE))
-setwd("C:/Users/asus/Dropbox/BMS, Bayesian Analysis Journal/Francisco Stuff/R/Github")
+setwd("...")
 
 #install.packages("BiocManager")
 #BiocManager::install("sparseMatrixStats")
