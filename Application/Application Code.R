@@ -212,7 +212,7 @@ for(i in 10:length(r_alpha))
 {
 	cat("  Quantile", r_alpha[i], "\r")
 	fit_Pas[[i]]<-gibbs_abms(y=y, Covariates=Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, alpha=r_alpha[i],
-			  a0=1, b0=1, count.iteration=TRUE )
+			  a0=1, b0=1, count.iteration=FALSE )
 }
 
 
