@@ -196,6 +196,7 @@ count.iteration=TRUE)
 
 summary_gibbs(fit)	#Summary results
 
+
 ########################################################
 ## 	Gibbs for Negative binomial regression		##
 ########################################################
@@ -214,6 +215,7 @@ fit<-gibbs_abms(y, Covariates, family="NBR", first_excluded=0, nchain=10000, bur
 a0=1, b0=1, count.iteration=TRUE )
 
 summary_gibbs(fit)	#Summary results
+
 
 ##################################################
 ## 		Gibbs for Quantile Regession 		##

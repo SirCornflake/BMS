@@ -1,13 +1,9 @@
 rm(list=ls(all=TRUE))
 setwd("...")
 
-#install.packages("BiocManager")
-#BiocManager::install("sparseMatrixStats")
-
-library(mombf)		#Rosell, LA method
-library(MASS)		#glm.nb, regresion binomial negativa, steAIC()
-library(quantreg)		#Base de datos reales para quantile regression? Y para hacer frequentist quantile regression
-library(sn)		#Frequentist Regression Skew Normal
+library(mombf)		
+library(MASS)		
+library(quantreg)			
 library(xtable)
 library(ggplot2)
 library(grid) 
@@ -23,7 +19,6 @@ source("function.R")
 ## For confussion matrix plot
 ConfusionMatrix<-function(aux, gamma_matrix)
 {
-
 	r_p<-ncol(gamma_matrix) +1
 	ConfusionTable<-rbind()
 	for(j in 1:2^(r_p-1))
@@ -304,7 +299,7 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE, StepFit=TRUE, StepVcov=TRUE
 	maxStepBIC<-max(PercentagesStepBIC)
 	}
 	
-	flag_OurMethod<-0; flag_OurMethod_bb<-0; flag_LA<-0; flag_StepAIC<-0; flag_StepBIC<-0
+	flag_OurMethod_womack<-0; flag_OurMethod_bb<-0; flag_LA<-0; flag_StepAIC<-0; flag_StepBIC<-0
 	if(length(which(maxOurMethod_womack==PercentagesOurMethod_womack))==1){flag_OurMethod_womack<-1}
 	if(length(which(maxOurMethod_bb==PercentagesOurMethod_bb))==1){flag_OurMethod_bb<-1}
 	if(length(which(maxLA==PercentagesLA))==1){flag_LA<-1}
@@ -324,6 +319,7 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE, StepFit=TRUE, StepVcov=TRUE
 	if(flag_OurMethod_bb==0){EstimatesOurMethod_bb$mean<-rep("- - -", rep_blank); EstimatesOurMethod_bb$sd<-rep("- - -", rep_blank)}
 	
 	EstimatesLA<-aux$LA_Posterior_Summary[,c(1,3)] 
+	rep_blank<-nrow(EstimatesLA)
 	if(flag_LA==0){EstimatesLA$mean<-rep("- - -", rep_blank); EstimatesLA$sd<-rep("- - -", rep_blank)}
 	
 	if(StepFit==TRUE)
@@ -332,12 +328,14 @@ Summary_SimStudy<-function(aux, ExploredModels=TRUE, StepFit=TRUE, StepVcov=TRUE
 	if(Regression=="QR"){EstimatesStepAIC<-rbind(sigma2=c(NaN,NaN),aux$StepAIC_Summary[,c(1,3)])}else{
 	EstimatesStepAIC<-aux$StepAIC_Summary[,c(1,3)]
 	}
+	rep_blank<-nrow(EstimatesStepAIC)
 	if(StepVcov==FALSE){EstimatesStepAIC$sd<-rep("- - -", rep_blank)}
 	if(flag_StepAIC==0){EstimatesStepAIC$mean<-rep("- - -", rep_blank); EstimatesStepAIC$sd<-rep("- - -", rep_blank)}
 	 
 	if(Regression=="QR"){EstimatesStepBIC<-rbind(sigma2=c(NaN,NaN),aux$StepBIC_Summary[,c(1,3)])}else{
 	EstimatesStepBIC<-aux$StepBIC_Summary[,c(1,3)] 
 	}
+	rep_blank<-nrow(EstimatesStepBIC)
 	if(StepVcov==FALSE){EstimatesStepBIC$sd<-rep("- - -", rep_blank)}
 	if(flag_StepBIC==0){EstimatesStepBIC$mean<-rep("- - -", rep_blank); EstimatesStepBIC$sd<-rep("- - -", rep_blank)}
 
@@ -477,7 +475,7 @@ DupBaseBinomial<-function(base)
 	
 
 
-General_Sim_OurMethod<-function(N, r_beta, R, nchain=1000, burnin=0, Regression="LiR", ConfussionPlot=FALSE, StepFit=TRUE, StepVcov=TRUE, ...)
+General_Sim_OurMethod<-function(N, r_beta, R, nchain=1000, burnin=0, Regression="LiR", ConfussionPlot=FALSE, StepFit=TRUE, StepVcov=TRUE, r_alpha=NULL, ...)
 {
 t0<-proc.time()
 	first_excluded=0
@@ -488,6 +486,7 @@ t0<-proc.time()
 	RealModel<-+(r_beta!=0)[-1]	#Real model. Erasing intercept, because it's out of the selection process
 	PredictorsIndex1_Real<-which(RealModel==1)	#Which beta!=0
 	PredictorsNames<-colnames(data.frame(matrix(ncol=p-1)))	#Predictor's names. In "X1,X2,..." format
+	alpha<-r_alpha
 
 
 	## Preparation for Our method (Womack prior)
@@ -692,7 +691,7 @@ t0<-proc.time()
 
 		if(Regression=="QR")
 		{
-			fit_OurMethod<-gibbs_abms(y, Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, ni=rep(1, length(y)), alpha=0.5,
+			fit_OurMethod<-gibbs_abms(y, Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, ni=rep(1, length(y)), alpha=r_alpha,
                      a0=1, b0=1, d=2, b2=1/2, model_fixed=NULL, WomackPrior=TRUE, a_bb=1, b_bb=1, count.iteration=FALSE )	
 		}
 		
@@ -758,7 +757,7 @@ t0<-proc.time()
 
 		############################################
 		##		  Nuestro metodo			##
-		##		(bete_binom prior)		##
+		##		(beta_binom prior)		##
 		############################################
 		t0_OurMethod_bb<-proc.time()
 		## Gibbs
@@ -781,7 +780,7 @@ t0<-proc.time()
 
 		if(Regression=="QR")
 		{
-			fit_OurMethod_bb<-gibbs_abms(y, Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, ni=rep(1, length(y)), alpha=0.5,
+			fit_OurMethod_bb<-gibbs_abms(y, Covariates, family="QR", first_excluded=0, nchain=nchain, burnin=burnin, tau2=1000, rho=1, ni=rep(1, length(y)), alpha=r_alpha,
                      a0=1, b0=1, d=2, b2=1/2, model_fixed=NULL, WomackPrior=FALSE, a_bb=1, b_bb=p_selection^(1), count.iteration=FALSE )	
 		}
 		
@@ -917,22 +916,22 @@ t0<-proc.time()
 		if(Regression=="LiR")
 		{
 			## glm fit and Step AIC
-			fit<-glm(y~., data = base, family="gaussian")			#fit con todos los predictores
-			fit_AIC<-stepAIC(fit, trace=FALSE)
+			fit<-glm(y~., data = base, family="gaussian")			#fit with all predictors
+			fit_AIC<-stepAIC(fit, trace=FALSE)					#Applying Step AIC
 		}
 
 		if(Regression=="LoR")
 		{
 			## glm fit and Step AIC
-			fit<-glm(y/ni ~., data = base, family = "binomial", weights = ni)			#fit con todos los predictores
-			fit_AIC<-stepAIC(fit, trace=FALSE)										#Aplicando StepAIC
+			fit<-glm(y/ni ~., data = base, family = "binomial", weights = ni)			
+			fit_AIC<-stepAIC(fit, trace=FALSE)									
 		}
 
 		if(Regression=="QR")
 		{
 			## glm fit and Step AIC
-			fit<-rq(y~., tau=r_alpha, data=base)			#fit con todos los predictores
-			fit_AIC<-stepAIC(fit, trace=FALSE)				#Aplicando StepAIC
+			fit<-rq(y~., tau=r_alpha, data=base)			
+			fit_AIC<-stepAIC(fit, trace=FALSE)				
 		}
 		if(Regression=="SNR")
 		{
@@ -989,9 +988,9 @@ t0<-proc.time()
 
 		## Coefficient estimated
 		aux_betaStepAIC<-rep(0,p)
-		if(Regression!="SNR"){aux_betaStepAIC[aux_betaIndex_1]<-as.vector(coefficients(fit_AIC)) }		#Creando los beta's de esa iteraci�n, de la misma forma que con nuestro m�todo
+		if(Regression!="SNR"){aux_betaStepAIC[aux_betaIndex_1]<-as.vector(coefficients(fit_AIC)) }	
 		if(Regression=="SNR"){ aux_betaStepAIC[aux_betaIndex_1]<-as.vector(coefficients(fit_AIC, "DP"))[1:length(aux_betaIndex_1)] }
-		glmStepAICCoefsMatrix[k,]<-aux_betaStepAIC			#Actualizando la matriz de coeficientes de glmStepAIC
+		glmStepAICCoefsMatrix[k,]<-aux_betaStepAIC			
 	
 		## Other parameters estimates with their SD (Normal, NegBinomial, Skewnormal)
 		if(Regression=="NBR")
@@ -1041,7 +1040,7 @@ t0<-proc.time()
 			glmStepAICSdMatrix[k,]<-aux_SdGlmStepAIC
 		}
 
-		#glmStepAICModelChain[k]<-ModelSelectedStepAIC				#Actualizando la matriz que cuenta el modelo elegido en cada r�plica
+		#glmStepAICModelChain[k]<-ModelSelectedStepAIC		
 	
 
 
@@ -1085,7 +1084,7 @@ t0<-proc.time()
 		}
 		if(Regression!="SNR")
 		{
-			coef_stepBIC<-fit_BIC$coefficients								#Sacando los coeficientes de fit_BIC
+			coef_stepBIC<-fit_BIC$coefficients						
 			PredNamesStepBIC<-names(fit_BIC$coefficients)[-1]
 		}
 
@@ -1175,7 +1174,7 @@ t0<-proc.time()
 
 		}
 
-		#glmStepBICModelChain[k]<-ModelSelectedStepBIC				#Actualizando la matriz que cuenta el modelo elegido en cada r�plica
+		#glmStepBICModelChain[k]<-ModelSelectedStepBIC		
 
 		#text_save<-paste0(Regression,"_","Size",N,"_","p",r_p,"",".Rdata")
 		#save.image(file=text_save)
@@ -1358,7 +1357,7 @@ t0<-proc.time()
 	}
 
 
-	if(ConfussionPlot==TRUE)
+	if(ConfussionPlot==TRUE && StepFit==TRUE)
 	{
 	aux<-list(DataList=DataList, coefs_PostMean_matrix_OurMethod=CoefsMeanOurMethod_matrix,	
 	True_Model= TruePredFormula, "Selected_Model_Count_OurMethod_womack"=SelectedModelCountOurMethod_summary,
@@ -1378,7 +1377,7 @@ t0<-proc.time()
 	AllModelsCountsStepAIC=AllModelsCountsStepAIC_rbind, AllModelsCountsStepBIC=AllModelsCountsStepBIC_rbind,
 	"Time_Minutes"=(t1 -t0)[3]/60)
 	}
-	if(StepFit==TRUE)
+	if(ConfussionPlot==FALSE && StepFit==TRUE)
 	{
 	aux<-list(DataList=DataList, coefs_PostMean_matrix_OurMethod=CoefsMeanOurMethod_matrix,	
 	True_Model= TruePredFormula, "Selected_Model_Count_OurMethod_womack"=SelectedModelCountOurMethod_summary,
@@ -1470,6 +1469,7 @@ for(j in 1:length(n_vec))
 t1<-proc.time()
 (t1-t0)[3]/60	#Time it took
 
+
 ##################################################
 ## 		Creating Confussion plot		##
 ##################################################
@@ -1542,7 +1542,7 @@ r_p<-length(r_beta)
 aux<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, r_sigma2=r_sigma2)
 Summary_SimStudy(aux, ExploredModels=TRUE)	#Summary results
 
-
+beepr::beep(sound = 3, expr = NULL)
 ############################################
 ## 		LoR Regression			##
 ############################################
@@ -1614,15 +1614,17 @@ alphaVector<-c(0.1, 0.5, 0.9)
 for(j in 1:length(alphaVector))
 {
 	set.seed(31415)
-	r_alpha<-alphaVector[j]
+	r_alpha<-alphaVector[j]; alpha<-r_alpha
 	#DataIter<-j
-	if(r_alpha==0.1){aux_0.1<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)}
-	if(r_alpha==0.5){aux_0.5<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)}
-	if(r_alpha==0.9){aux_0.9<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)}
+	if(r_alpha==0.1){aux_0.1_1<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, r_alpha=alphaVector[1])}
+	if(r_alpha==0.5){aux_0.5_1<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, r_alpha=alphaVector[2])}
+	if(r_alpha==0.9){aux_0.9_1<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, r_alpha=alphaVector[3])}
 }
-Summary_SimStudy(aux_0.1, ExploredModels=TRUE)	#Summary results
-Summary_SimStudy(aux_0.5, ExploredModels=TRUE)	#Summary results
-Summary_SimStudy(aux_0.9, ExploredModels=TRUE)	#Summary results
+Summary_SimStudy(aux_0.1_1, ExploredModels=TRUE)	#Summary results
+Summary_SimStudy(aux_0.5_1, ExploredModels=TRUE)	#Summary results
+Summary_SimStudy(aux_0.9_1, ExploredModels=TRUE)	#Summary results
+
+save.image("QR_AllQuantiles_AllScenarios_New.Rdata")
 
 ## Scenario 2 (Supplementary material, for Table 6)
 N<-1000
@@ -1634,13 +1636,18 @@ for(j in 1:length(alphaVector))
 	set.seed(31415)
 	r_alpha<-alphaVector[j]
 	DataIter<-j
-	if(r_alpha==0.1){aux_0.1<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)}
-	if(r_alpha==0.5){aux_0.5<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)}
-	if(r_alpha==0.9){aux_0.9<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression)}
+	if(r_alpha==0.1){aux_0.1_2<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, r_alpha=alphaVector[1])}
+	save.image("QR_AllQuantiles_AllScenarios_New.Rdata")
+	if(r_alpha==0.5){aux_0.5_2<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, r_alpha=alphaVector[2])}
+	save.image("QR_AllQuantiles_AllScenarios_New.Rdata")
+	if(r_alpha==0.9){aux_0.9_2<-General_Sim_OurMethod(N, r_beta, R, nchain=nchain, burnin=burnin, Regression=Regression, r_alpha=alphaVector[3])}
+	save.image("QR_AllQuantiles_AllScenarios_New.Rdata")
 }
-Summary_SimStudy(aux_0.1, ExploredModels=TRUE)	#Summary results
-Summary_SimStudy(aux_0.5, ExploredModels=TRUE)	#Summary results
-Summary_SimStudy(aux_0.9, ExploredModels=TRUE)	#Summary results
+Summary_SimStudy(aux_0.1_2, ExploredModels=TRUE)	#Summary results
+Summary_SimStudy(aux_0.5_2, ExploredModels=TRUE)	#Summary results
+Summary_SimStudy(aux_0.9_2, ExploredModels=TRUE)	#Summary results
+
+
 
 
 ############################################
